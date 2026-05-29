@@ -1,0 +1,34 @@
+name: '[ CD ] | NPM'
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: 'Publish to npmjs'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.node-version'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+
+      - uses: heronlabs/publish-npm-action@v2
+        with:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

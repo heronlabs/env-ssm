@@ -1,0 +1,37 @@
+{
+  "forbidden": [
+    {
+      "comment": "Circular dependencies make code unpredictable and hard to test.",
+      "from": {},
+      "name": "no-circular",
+      "severity": "error",
+      "to": {
+        "circular": true
+      }
+    },
+    {
+      "comment": "Orphan modules are dead-code candidates (allow the public entry main.ts and type decls).",
+      "from": {
+        "orphan": true,
+        "pathNot": ["\\.d\\.ts$", "(^|/)main\\.ts$"]
+      },
+      "name": "no-orphans",
+      "severity": "warn",
+      "to": {}
+    }
+  ],
+  "options": {
+    "doNotFollow": {
+      "path": "node_modules"
+    },
+    "reporterOptions": {
+      "dot": {
+        "collapsePattern": "node_modules/[^/]+"
+      }
+    },
+    "tsConfig": {
+      "fileName": "tsconfig.json"
+    },
+    "tsPreCompilationDeps": true
+  }
+}

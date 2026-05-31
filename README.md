@@ -50,10 +50,9 @@ pnpm dep:cruise       # architecture rules
 
 ## Release
 
-Publishing is automated:
+Publishing is automated by a single manual workflow:
 
-1. Run the **`[ CD ] | Tags`** workflow (`workflow_dispatch`) with a semver `spec` (`major` / `minor` / `patch`). It bumps `package.json`, tags, and creates a GitHub release.
-2. The **`[ CD ] | NPM`** workflow fires on the published release and publishes `@heronlabs/env-ssm` to npmjs via `heronlabs/publish-npm-action`.
+1. Run the **`[ CD ] | Tags`** workflow (`workflow_dispatch`) with a semver `spec` (`major` / `minor` / `patch`). The `setup-tags` job bumps `package.json`, tags, and creates a GitHub release; the `publish-npm` job then checks out the new tag, builds, and publishes `@heronlabs/env-ssm` to npmjs with `npm publish --provenance --access public`.
 
 Requires the `NPM_TOKEN` repository secret (an npmjs automation token with publish rights on the `@heronlabs` scope) and the `PAT` secret used by the tag workflow.
 

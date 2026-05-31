@@ -6,8 +6,10 @@ import {Mock} from 'moq.ts';
 import {Mock as ViMock, vi} from 'vitest';
 
 export const ssmService: {
+  getParameter: ViMock;
   getParametersByPath: ViMock;
 } = {
+  getParameter: vi.fn(),
   getParametersByPath: vi.fn(),
 };
 
@@ -31,6 +33,8 @@ export const createTestingModule = (
     .overrideProvider(SSM)
     .useValue(
       new Mock<SSM>()
+        .setup(mock => mock.getParameter)
+        .returns(ssmService.getParameter)
         .setup(mock => mock.getParametersByPath)
         .returns(ssmService.getParametersByPath)
         .object(),

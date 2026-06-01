@@ -42,4 +42,4 @@ pnpm dep:cruise
 
 ## Release
 
-`[ CD ] | Tags` (manual `workflow_dispatch`, choose `major`/`minor`/`patch`) runs the full release in one flow: `setup-tags` bumps + tags + creates the GitHub release, then `publish-npm` checks out the new tag, builds, and runs `npm publish --provenance --access public`. Needs `NPM_TOKEN` (npmjs automation token) and `PAT` (GitHub repo+workflow token) repo secrets. To cut a release: `gh workflow run '[ CD ] | Tags' --repo heronlabs/env-ssm -f spec=patch`.
+`[ CD ] | Tags` (manual `workflow_dispatch`, choose `major`/`minor`/`patch`) runs the full release in one flow: `setup-tags` bumps + tags + creates the GitHub release, then `publish-npm` checks out the new tag, builds, and runs `npm publish --access public` (no `--provenance` — npm only signs sigstore provenance for public source repos, and this repo is private). Needs `NPM_TOKEN` (npmjs automation token) and `PAT` (GitHub repo+workflow token) repo secrets. To cut a release: `gh workflow run '[ CD ] | Tags' --repo heronlabs/env-ssm -f spec=patch`.

@@ -230,9 +230,6 @@ describe('Given a service', () => {
   });
 
   describe('Given a request to get or throw a value', () => {
-    const arn = (name = faker.string.alpha(12)) =>
-      `arn:aws:ssm:us-east-1:123456789012:parameter/${name}`;
-
     it('Should return the raw value when it is not an ARN', async () => {
       const key = faker.string.alpha(8);
       const rawValue = faker.string.alpha();
@@ -269,7 +266,9 @@ describe('Given a service', () => {
       const key = faker.string.alpha(8);
       const resolvedValue = faker.string.alpha();
 
-      configService.getOrThrow.mockReturnValueOnce(arn());
+      configService.getOrThrow.mockReturnValueOnce(
+        'arn:aws:ssm:us-east-1:123456789012:parameter/database-password',
+      );
       ssmService.getParameter.mockResolvedValueOnce(
         new Mock<GetParameterCommandOutput>()
           .setup(mock => mock.Parameter)
@@ -284,7 +283,7 @@ describe('Given a service', () => {
 
     it('Should pass the ARN as Name to getParameter', async () => {
       const key = faker.string.alpha(8);
-      const value = arn();
+      const value = 'arn:aws:ssm:us-east-1:123456789012:parameter/redis-url';
 
       configService.getOrThrow.mockReturnValueOnce(value);
       ssmService.getParameter.mockResolvedValueOnce(
@@ -304,7 +303,9 @@ describe('Given a service', () => {
     it('Should pass WithDecryption true to getParameter', async () => {
       const key = faker.string.alpha(8);
 
-      configService.getOrThrow.mockReturnValueOnce(arn());
+      configService.getOrThrow.mockReturnValueOnce(
+        'arn:aws:ssm:us-east-1:123456789012:parameter/api-key',
+      );
       ssmService.getParameter.mockResolvedValueOnce(
         new Mock<GetParameterCommandOutput>()
           .setup(mock => mock.Parameter)
@@ -322,7 +323,9 @@ describe('Given a service', () => {
     it('Should throw ValueUndefined when Parameter is undefined', async () => {
       const key = faker.string.alpha(8);
 
-      configService.getOrThrow.mockReturnValueOnce(arn());
+      configService.getOrThrow.mockReturnValueOnce(
+        'arn:aws:ssm:us-east-1:123456789012:parameter/db-host',
+      );
       ssmService.getParameter.mockResolvedValueOnce(
         new Mock<GetParameterCommandOutput>()
           .setup(mock => mock.Parameter)
@@ -338,7 +341,9 @@ describe('Given a service', () => {
     it('Should throw ValueUndefined when Parameter has no Value', async () => {
       const key = faker.string.alpha(8);
 
-      configService.getOrThrow.mockReturnValueOnce(arn());
+      configService.getOrThrow.mockReturnValueOnce(
+        'arn:aws:ssm:us-east-1:123456789012:parameter/mail-token',
+      );
       ssmService.getParameter.mockResolvedValueOnce(
         new Mock<GetParameterCommandOutput>()
           .setup(mock => mock.Parameter)

@@ -4,10 +4,11 @@ import {ConfigService} from '@nestjs/config';
 
 import {PathUndefined, ValueUndefined} from '../errors/value-undefined';
 
-const SSM_PARAMETER_ARN = /^arn:aws:ssm:[a-z0-9-]+:[0-9]{12}:parameter\/\S+$/;
-
 export class SsmService {
   async getOrThrow(key: string): Promise<string> {
+    const SSM_PARAMETER_ARN =
+      /^arn:aws:ssm:[a-z0-9-]+:[0-9]{12}:parameter\/\S+$/;
+
     const value = this.configService.getOrThrow<string>(key);
 
     if (!SSM_PARAMETER_ARN.test(value)) {

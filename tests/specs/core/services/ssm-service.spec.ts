@@ -237,8 +237,10 @@ describe('Given a service', () => {
 
       await service.evalParameters();
 
-      expect(process.env[firstName]).toBe(firstValue);
-      expect(process.env[secondName]).toBe(secondValue);
+      expect(process.env).toMatchObject({
+        [firstName]: firstValue,
+        [secondName]: secondValue,
+      });
     });
 
     it('Should stop paginating once NextToken is exhausted', async () => {

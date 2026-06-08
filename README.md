@@ -1,12 +1,15 @@
 # @heronlabs/env-ssm
 
+[![npm version](https://img.shields.io/npm/v/@heronlabs/env-ssm.svg)](https://www.npmjs.com/package/@heronlabs/env-ssm)
+[![license](https://img.shields.io/npm/l/@heronlabs/env-ssm.svg)](./LICENSE)
+
 Loads AWS SSM Parameter Store values into `process.env` for NestJS apps before bootstrap.
 
 ## Install
 
 ```bash
-pnpm add @heronlabs/env-ssm
-# or: npm i @heronlabs/env-ssm
+npm i @heronlabs/env-ssm
+# or: pnpm add @heronlabs/env-ssm
 ```
 
 Peer dependencies (provided by the host app): `@nestjs/common`, `@nestjs/config`, `@nestjs/core`, `reflect-metadata`.

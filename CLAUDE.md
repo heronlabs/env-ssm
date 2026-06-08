@@ -29,9 +29,10 @@ const factory = await ParameterFactory.make('AWS_ENV_PATH');
 await factory.evalParameters();
 ```
 
-- `ParameterFactory.make(paramRoot)` — reads `process.env[paramRoot]` as the SSM path prefix, returns `SsmService`
-- `SsmService.evalParameters()` — fetches all parameters under the path and writes leaf names to `process.env`
+- `ParameterFactory.make(paramRoot)` — reads `process.env[paramRoot]` as the SSM path prefix, returns `SsmInitService`
+- `SsmInitService.evalParameters()` — fetches all parameters under the path and writes leaf names to `process.env`
 - Throws `PathUndefined` if the SSM path returns zero parameters
+- `SsmConfigService.getOrThrow(key)` — resolves a single value (literal or SSM ARN); obtained via DI by importing `SsmConfigModule` and injecting `SsmConfigService`
 
 ## Verify
 

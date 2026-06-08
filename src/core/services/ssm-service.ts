@@ -1,4 +1,8 @@
-import {SSM} from '@aws-sdk/client-ssm';
+import {
+  GetParametersByPathCommandOutput,
+  Parameter,
+  SSM,
+} from '@aws-sdk/client-ssm';
 import {Inject} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
 
@@ -30,16 +34,30 @@ export class SsmService {
   async evalParameters(): Promise<void> {
     const path = this.configService.getOrThrow<string>(this.paramRoot);
 
-    const result = await this.parameter.getParametersByPath({
-      Path: path,
-      WithDecryption: true,
-    });
+    const parameters: Parameter[] = [];
 
-    if (!result.Parameters || result.Parameters.length === 0) {
+    let nextToken: string | undefined = undefined;
+
+    do {
+      const result: GetParametersByPathCommandOutput =
+        await this.parameter.getParametersByPath({
+          Path: path,
+          WithDecryption: true,
+          NextToken: nextToken,
+        });
+
+      if (result.Parameters) {
+        parameters.push(...result.Parameters);
+      }
+
+      nextToken = result.NextToken;
+    } while (nextToken);
+
+    if (parameters.length === 0) {
       throw PathUndefined.make(path);
     }
 
-    result.Parameters.forEach(parameter => {
+    parameters.forEach(parameter => {
       const {Name, Value} = parameter;
 
       const names = Name ? Name.split('/') : [];

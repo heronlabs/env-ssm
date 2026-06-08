@@ -4,7 +4,7 @@ import {Mock} from 'moq.ts';
 
 import {ValueUndefined} from '../../../../src/core/errors/value-undefined';
 import {SsmConfigService} from '../../../../src/core/services/ssm-config-service';
-import {SsmConfigModule} from '../../../../src/core/ssm-config-module';
+import {ssmConfigModule} from '../../../../src/core/ssm-config-module';
 import {
   configService,
   createTestingModule,
@@ -15,9 +15,7 @@ describe('Given a config service', () => {
   let service: SsmConfigService;
 
   beforeEach(async () => {
-    const moduleRef = await createTestingModule({
-      imports: [SsmConfigModule],
-    }).compile();
+    const moduleRef = await createTestingModule(ssmConfigModule).compile();
 
     service = moduleRef.get(SsmConfigService);
   });

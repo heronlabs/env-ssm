@@ -2,9 +2,9 @@ import {GetParametersByPathCommandOutput} from '@aws-sdk/client-ssm';
 import {faker} from '@faker-js/faker';
 import {Mock} from 'moq.ts';
 
-import {CoreBootstrap} from '../../../../src/core/core-bootstrap';
 import {PathUndefined} from '../../../../src/core/errors/value-undefined';
 import {SsmInitService} from '../../../../src/core/services/ssm-init-service';
+import {SsmInitModule} from '../../../../src/core/ssm-init-module';
 import {
   createTestingModule,
   ssmService,
@@ -15,7 +15,7 @@ describe('Given an init service', () => {
 
   beforeEach(async () => {
     const moduleRef = await createTestingModule({
-      imports: [CoreBootstrap.register('ENV_PARAM_ROOT')],
+      imports: [SsmInitModule.register('ENV_PARAM_ROOT')],
     }).compile();
 
     service = moduleRef.get(SsmInitService);

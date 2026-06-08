@@ -50,10 +50,13 @@ const password = await factory.getOrThrow('DB_PASSWORD');
 ```
 src/
 ├── core/
-│   ├── core-bootstrap.ts        # DynamicModule: wires the SSM client + SsmService
+│   ├── ssm-init-module.ts             # DynamicModule: wires the SSM client + SsmInitService
+│   ├── ssm-config-module.ts           # Module: wires the SSM client + SsmConfigService
 │   ├── errors/value-undefined.ts
-│   └── services/ssm-service.ts  # evalParameters(): fetches path, writes to process.env
-└── main.ts                      # exports ParameterFactory
+│   └── services/
+│       ├── ssm-init-service.ts        # evalParameters(): fetches path, writes to process.env
+│       └── ssm-config-service.ts      # getOrThrow(): resolves a single value, optionally from an ARN
+└── main.ts                            # exports ParameterFactory
 ```
 
 ## Develop

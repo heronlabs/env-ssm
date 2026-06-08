@@ -13,10 +13,13 @@ Standalone library (`@heronlabs/env-ssm`, published to npmjs). Loads AWS SSM Par
 ```
 src/
 ├── core/
-│   ├── core-bootstrap.ts         # DynamicModule: wires SSM client + SsmService
+│   ├── ssm-init-module.ts             # DynamicModule: wires SSM client + SsmInitService
+│   ├── ssm-config-module.ts           # Module: wires SSM client + SsmConfigService
 │   ├── errors/value-undefined.ts
-│   └── services/ssm-service.ts   # evalParameters(): fetches path, writes to process.env
-└── main.ts                       # exports ParameterFactory
+│   └── services/
+│       ├── ssm-init-service.ts        # evalParameters(): fetches path, writes to process.env
+│       └── ssm-config-service.ts      # getOrThrow(): resolves a single value, optionally from an ARN
+└── main.ts                            # exports ParameterFactory
 ```
 
 ## API

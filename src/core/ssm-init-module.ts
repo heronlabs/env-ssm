@@ -5,10 +5,10 @@ import {ConfigModule} from '@nestjs/config';
 import {SsmInitService} from './services/ssm-init-service';
 
 @Module({})
-export class CoreBootstrap {
+export class SsmInitModule {
   static register(paramRoot: string): DynamicModule {
     return {
-      module: CoreBootstrap,
+      module: SsmInitModule,
       providers: [
         {
           provide: SSM,

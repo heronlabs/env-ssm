@@ -23,7 +23,6 @@
     "!src/main.ts",
     "!src/**/*.d.ts",
     "!src/**/*factory.ts",
-    "!src/**/*-bootstrap.ts",
     "!src/**/*-module.ts"
   ],
   "packageManager": "pnpm",

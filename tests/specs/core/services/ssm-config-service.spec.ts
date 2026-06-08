@@ -2,9 +2,9 @@ import {GetParameterCommandOutput} from '@aws-sdk/client-ssm';
 import {faker} from '@faker-js/faker';
 import {Mock} from 'moq.ts';
 
-import {CoreModule} from '../../../../src/core/core-module';
 import {ValueUndefined} from '../../../../src/core/errors/value-undefined';
 import {SsmConfigService} from '../../../../src/core/services/ssm-config-service';
+import {SsmConfigModule} from '../../../../src/core/ssm-config-module';
 import {
   configService,
   createTestingModule,
@@ -16,7 +16,7 @@ describe('Given a config service', () => {
 
   beforeEach(async () => {
     const moduleRef = await createTestingModule({
-      imports: [CoreModule],
+      imports: [SsmConfigModule],
     }).compile();
 
     service = moduleRef.get(SsmConfigService);

@@ -2,7 +2,7 @@ import {SSM} from '@aws-sdk/client-ssm';
 import {DynamicModule, Module} from '@nestjs/common';
 import {ConfigModule} from '@nestjs/config';
 
-import {SsmService} from './services/ssm-service';
+import {SsmInitService} from './services/ssm-init-service';
 
 @Module({})
 export class CoreBootstrap {
@@ -18,9 +18,9 @@ export class CoreBootstrap {
           provide: 'ParamRoot',
           useValue: paramRoot,
         },
-        SsmService,
+        SsmInitService,
       ],
-      exports: [SsmService],
+      exports: [SsmInitService],
       imports: [ConfigModule],
     };
   }

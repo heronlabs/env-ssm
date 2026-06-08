@@ -23,7 +23,8 @@
     "!src/main.ts",
     "!src/**/*.d.ts",
     "!src/**/*factory.ts",
-    "!src/**/*-bootstrap.ts"
+    "!src/**/*-bootstrap.ts",
+    "!src/**/*-module.ts"
   ],
   "packageManager": "pnpm",
   "plugins": ["@stryker-mutator/vitest-runner"],

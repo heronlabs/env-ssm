@@ -22,22 +22,38 @@ const factory = await ParameterFactory.make('AWS_ENV_PATH');
 await factory.evalParameters();
 ```
 
-- `ParameterFactory.make(paramRoot)` — reads `process.env[paramRoot]` as the SSM path prefix, returns an `SsmService`.
-- `SsmService.evalParameters()` — fetches every parameter under the path (`WithDecryption: true`) and writes each leaf name to `process.env`. Throws `PathUndefined` if the SSM path returns zero parameters.
-- `SsmService.getOrThrow(key)` — resolves a single config value. Reads `key` via the underlying `ConfigService.getOrThrow`. If the value is an SSM parameter ARN (`arn:aws:ssm:<region>:<account>:parameter/<name>`) it fetches that parameter (`WithDecryption: true`) and returns the resolved value; otherwise it returns the raw value unchanged. Throws `ValueUndefined` if the ARN resolves to no value. Returns a `Promise<string>`.
+- `ParameterFactory.make(paramRoot)` — reads `process.env[paramRoot]` as the SSM path prefix, returns an `SsmInitService`.
+- `SsmInitService.evalParameters()` — fetches every parameter under the path (`WithDecryption: true`) and writes each leaf name to `process.env`. Throws `PathUndefined` if the SSM path returns zero parameters.
+- `SsmConfigService.getOrThrow(key)` — resolves a single config value. Obtained via NestJS DI: import `SsmConfigModule` (exported from `@heronlabs/env-ssm`) and inject `SsmConfigService`. Reads `key` via the underlying `ConfigService.getOrThrow`. If the value is an SSM parameter ARN (`arn:aws:ssm:<region>:<account>:parameter/<name>`) it fetches that parameter (`WithDecryption: true`) and returns the resolved value; otherwise it returns the raw value unchanged. Throws `ValueUndefined` if the ARN resolves to no value. Returns a `Promise<string>`.
 
 ### Resolving a single value
 
-`getOrThrow` is handy when a config entry may be either a literal value or a reference to an SSM parameter ARN — the same call works for both:
+`getOrThrow` is handy when a config entry may be either a literal value or a reference to an SSM parameter ARN — the same call works for both. It lives on `SsmConfigService`, obtained through NestJS DI: import `SsmConfigModule` and inject `SsmConfigService` where you need it.
 
 ```ts
-import {ParameterFactory} from '@heronlabs/env-ssm';
+import {Module} from '@nestjs/common';
+import {SsmConfigModule} from '@heronlabs/env-ssm';
 
-const factory = await ParameterFactory.make('AWS_ENV_PATH');
+@Module({
+  imports: [SsmConfigModule],
+})
+export class AppModule {}
+```
 
-// DB_PASSWORD may hold a literal, or an SSM ARN like
-// arn:aws:ssm:us-east-1:123456789012:parameter/app/db-password
-const password = await factory.getOrThrow('DB_PASSWORD');
+```ts
+import {Injectable} from '@nestjs/common';
+import {SsmConfigService} from '@heronlabs/env-ssm';
+
+@Injectable()
+export class DbProvider {
+  constructor(private readonly config: SsmConfigService) {}
+
+  async password(): Promise<string> {
+    // DB_PASSWORD may hold a literal, or an SSM ARN like
+    // arn:aws:ssm:us-east-1:123456789012:parameter/app/db-password
+    return this.config.getOrThrow('DB_PASSWORD');
+  }
+}
 ```
 
 ### Errors
@@ -50,10 +66,13 @@ const password = await factory.getOrThrow('DB_PASSWORD');
 ```
 src/
 ├── core/
-│   ├── core-bootstrap.ts        # DynamicModule: wires the SSM client + SsmService
+│   ├── ssm-init-module.ts             # DynamicModule: wires the SSM client + SsmInitService
+│   ├── ssm-config-module.ts           # Module: wires the SSM client + SsmConfigService
 │   ├── errors/value-undefined.ts
-│   └── services/ssm-service.ts  # evalParameters(): fetches path, writes to process.env
-└── main.ts                      # exports ParameterFactory
+│   └── services/
+│       ├── ssm-init-service.ts        # evalParameters(): fetches path, writes to process.env
+│       └── ssm-config-service.ts      # getOrThrow(): resolves a single value, optionally from an ARN
+└── main.ts                            # exports ParameterFactory
 ```
 
 ## Develop

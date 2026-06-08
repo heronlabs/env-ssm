@@ -13,10 +13,13 @@ Standalone library (`@heronlabs/env-ssm`, published to npmjs). Loads AWS SSM Par
 ```
 src/
 ├── core/
-│   ├── core-bootstrap.ts         # DynamicModule: wires SSM client + SsmService
+│   ├── ssm-init-module.ts             # DynamicModule: wires SSM client + SsmInitService
+│   ├── ssm-config-module.ts           # Module: wires SSM client + SsmConfigService
 │   ├── errors/value-undefined.ts
-│   └── services/ssm-service.ts   # evalParameters(): fetches path, writes to process.env
-└── main.ts                       # exports ParameterFactory
+│   └── services/
+│       ├── ssm-init-service.ts        # evalParameters(): fetches path, writes to process.env
+│       └── ssm-config-service.ts      # getOrThrow(): resolves a single value, optionally from an ARN
+└── main.ts                            # exports ParameterFactory
 ```
 
 ## API
@@ -26,9 +29,10 @@ const factory = await ParameterFactory.make('AWS_ENV_PATH');
 await factory.evalParameters();
 ```
 
-- `ParameterFactory.make(paramRoot)` — reads `process.env[paramRoot]` as the SSM path prefix, returns `SsmService`
-- `SsmService.evalParameters()` — fetches all parameters under the path and writes leaf names to `process.env`
+- `ParameterFactory.make(paramRoot)` — reads `process.env[paramRoot]` as the SSM path prefix, returns `SsmInitService`
+- `SsmInitService.evalParameters()` — fetches all parameters under the path and writes leaf names to `process.env`
 - Throws `PathUndefined` if the SSM path returns zero parameters
+- `SsmConfigService.getOrThrow(key)` — resolves a single value (literal or SSM ARN); obtained via DI by importing `SsmConfigModule` and injecting `SsmConfigService`
 
 ## Verify
 

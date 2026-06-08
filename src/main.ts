@@ -1,15 +1,19 @@
 import {NestFactory} from '@nestjs/core';
 
-import {CoreBootstrap} from './core/core-bootstrap';
-import {SsmService} from './core/services/ssm-service';
+import {SsmConfigService} from './core/services/ssm-config-service';
+import {SsmInitService} from './core/services/ssm-init-service';
+import {SsmConfigModule} from './core/ssm-config-module';
+import {SsmInitModule} from './core/ssm-init-module';
+
+export {SsmConfigModule, SsmConfigService, SsmInitService};
 
 export class ParameterFactory {
-  static async make(paramRoot: string): Promise<SsmService> {
+  static async make(paramRoot: string): Promise<SsmInitService> {
     const app = await NestFactory.createApplicationContext(
-      CoreBootstrap.register(paramRoot),
+      SsmInitModule.register(paramRoot),
       {logger: false},
     );
 
-    return app.get(SsmService);
+    return app.get(SsmInitService);
   }
 }

@@ -29,6 +29,25 @@ await factory.evalParameters();
 - `SsmInitService.evalParameters()` — fetches every parameter under the path (`WithDecryption: true`) and writes each leaf name to `process.env`. Throws `PathUndefined` if the SSM path returns zero parameters.
 - `SsmConfigService.getOrThrow(key)` — resolves a single config value. Obtained via NestJS DI: import `SsmConfigModule` (exported from `@heronlabs/env-ssm`) and inject `SsmConfigService`. Reads `key` via the underlying `ConfigService.getOrThrow`. If the value is an SSM parameter ARN (`arn:aws:ssm:<region>:<account>:parameter/<name>`) it fetches that parameter (`WithDecryption: true`) and returns the resolved value; otherwise it returns the raw value unchanged. Throws `ValueUndefined` if the ARN resolves to no value. Returns a `Promise<string>`.
 
+### Standalone (no NestJS)
+
+For consumers that don't run NestJS, the `./standalone` subpath exposes
+`loadSsmParameters` — a NestJS-free counterpart of `evalParameters()` that pulls
+in only `@aws-sdk/client-ssm`.
+
+```ts
+import {loadSsmParameters} from '@heronlabs/env-ssm/standalone';
+
+// Reads the SSM path from process.env.AWS_ENV_PATH and writes every
+// parameter's leaf name (WithDecryption: true) into process.env.
+await loadSsmParameters();
+```
+
+- `loadSsmParameters(pathEnvVar = 'AWS_ENV_PATH')` — reads `process.env[pathEnvVar]`
+  as the SSM path prefix, fetches every parameter under it (paginating over
+  `NextToken`), and writes each leaf name to `process.env`. Throws `PathUndefined`
+  if the env var is unset or the path returns zero parameters.
+
 ### Resolving a single value
 
 `getOrThrow` is handy when a config entry may be either a literal value or a reference to an SSM parameter ARN — the same call works for both. It lives on `SsmConfigService`, obtained through NestJS DI: import `SsmConfigModule` and inject `SsmConfigService` where you need it.

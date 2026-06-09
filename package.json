@@ -40,6 +40,16 @@
     "node": ">=22",
     "pnpm": ">=10.29.3"
   },
+  "exports": {
+    ".": {
+      "default": "./bin/src/main.js",
+      "types": "./bin/src/main.d.ts"
+    },
+    "./standalone": {
+      "default": "./bin/src/standalone.js",
+      "types": "./bin/src/standalone.d.ts"
+    }
+  },
   "files": [
     "bin/src"
   ],

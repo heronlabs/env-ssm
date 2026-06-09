@@ -48,9 +48,7 @@ export async function loadSsmParameters(
   parameters.forEach(parameter => {
     const {Name, Value} = parameter;
 
-    const names = Name ? Name.split('/') : [];
-
-    const parameterName = names.pop();
+    const parameterName = Name?.split('/').pop();
 
     if (parameterName && Value) {
       process.env[parameterName] = Value;

@@ -110,6 +110,21 @@ describe('Given the standalone SSM loader', () => {
       expect(result).toBeUndefined();
     });
 
+    it('Should not mutate process.env when Name and Value are both undefined', async () => {
+      const before = Object.keys(process.env).sort();
+
+      getParametersByPath.mockResolvedValueOnce(
+        new Mock<GetParametersByPathCommandOutput>()
+          .setup(mock => mock.Parameters)
+          .returns([{Name: undefined, Value: undefined}])
+          .object(),
+      );
+
+      await loadSsmParameters(pathEnvVar);
+
+      expect(Object.keys(process.env).sort()).toEqual(before);
+    });
+
     it('Should throw PathUndefined when Parameters is undefined', async () => {
       getParametersByPath.mockResolvedValueOnce(
         new Mock<GetParametersByPathCommandOutput>()
@@ -224,6 +239,21 @@ describe('Given the standalone SSM loader', () => {
       await loadSsmParameters(pathEnvVar);
 
       expect(process.env[probeKey]).toBeUndefined();
+    });
+
+    it('Should not mutate process.env when Value is present but Name is undefined', async () => {
+      const before = Object.keys(process.env).sort();
+
+      getParametersByPath.mockResolvedValueOnce(
+        new Mock<GetParametersByPathCommandOutput>()
+          .setup(mock => mock.Parameters)
+          .returns([{Name: undefined, Value: faker.string.alpha()}])
+          .object(),
+      );
+
+      await loadSsmParameters(pathEnvVar);
+
+      expect(Object.keys(process.env).sort()).toEqual(before);
     });
 
     it('Should set process.env for parameters from every page when paginating', async () => {

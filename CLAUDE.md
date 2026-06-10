@@ -1,25 +1,23 @@
 # env-ssm — SSM Parameter Loader
 
-Standalone library (`@heronlabs/env-ssm`, published to npmjs). Loads AWS SSM Parameter Store values into `process.env` for NestJS apps before bootstrap. Ejected from the `heronlabs/workloads` monorepo.
+Standalone, framework-free library (`@heronlabs/env-ssm`, published to npmjs). Loads AWS SSM Parameter Store values into `process.env`. Ejected from the `heronlabs/workloads` monorepo. A separate `nestjs-env-ssm` wrapper layers NestJS DI on top of this core.
 
 ## Stack
 
-- `@aws-sdk/client-ssm` + NestJS application context
-- NestJS packages (`@nestjs/common`, `@nestjs/config`, `@nestjs/core`, `reflect-metadata`) are **peer dependencies** — the host app provides them
+- `@aws-sdk/client-ssm` — the only runtime dependency; plain classes, no DI container
 - Exported entry: `./bin/src/main.js` (`main:`, `types:`)
+- Built with `tsc -p tsconfig.bin.json`; tests run on vitest's default esbuild transform (no swc)
 
 ## Structure
 
 ```
 src/
 ├── core/
-│   ├── ssm-init-module.ts             # DynamicModule: wires SSM client + SsmInitService
-│   ├── ssm-config-module.ts           # Module: wires SSM client + SsmConfigService
 │   ├── errors/value-undefined.ts
 │   └── services/
 │       ├── ssm-init-service.ts        # evalParameters(): fetches path, writes to process.env
 │       └── ssm-config-service.ts      # getOrThrow(): resolves a single value, optionally from an ARN
-└── main.ts                            # exports ParameterFactory
+└── main.ts                            # exports ParameterFactory + SsmConfigFactory + services + errors
 ```
 
 ## API
@@ -29,10 +27,10 @@ const factory = await ParameterFactory.make('AWS_ENV_PATH');
 await factory.evalParameters();
 ```
 
-- `ParameterFactory.make(paramRoot)` — reads `process.env[paramRoot]` as the SSM path prefix, returns `SsmInitService`
-- `SsmInitService.evalParameters()` — fetches all parameters under the path and writes leaf names to `process.env`
-- Throws `PathUndefined` if the SSM path returns zero parameters
-- `SsmConfigService.getOrThrow(key)` — resolves a single value (literal or SSM ARN); obtained via DI by importing `SsmConfigModule` and injecting `SsmConfigService`
+- `ParameterFactory.make(paramRoot)` — constructs and returns an `SsmInitService` bound to `paramRoot` (a `new SSM(...)` client wired in directly)
+- `SsmInitService.evalParameters()` — reads `process.env[paramRoot]` as the SSM path, fetches all parameters under it and writes leaf names to `process.env`
+- Throws `ValueUndefined` if `process.env[paramRoot]` is unset; throws `PathUndefined` if the path returns zero parameters
+- `SsmConfigService.getOrThrow(key)` — reads `process.env[key]` and resolves a single value (literal or SSM ARN); throws `ValueUndefined` if the key is unset or the ARN resolves to no value. Construct one with `SsmConfigFactory.make()`
 
 ## Verify
 

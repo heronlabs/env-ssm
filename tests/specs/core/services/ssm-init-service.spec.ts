@@ -2,23 +2,29 @@ import {GetParametersByPathCommandOutput} from '@aws-sdk/client-ssm';
 import {faker} from '@faker-js/faker';
 import {Mock} from 'moq.ts';
 
-import {PathUndefined} from '../../../../src/core/errors/value-undefined';
+import {PathUndefined} from '../../../../src/core/errors/path-undefined';
+import {ValueUndefined} from '../../../../src/core/errors/value-undefined';
 import {SsmInitService} from '../../../../src/core/services/ssm-init-service';
-import {SsmInitModule} from '../../../../src/core/ssm-init-module';
 import {
-  createTestingModule,
+  cleanEnv,
+  createMockSsm,
+  setEnv,
+  snapshotEnv,
   ssmService,
-} from '../../../__mocks__/create-testing-module';
+} from '../../../__mocks__/test-helpers';
 
 describe('Given an init service', () => {
   let service: SsmInitService;
 
-  beforeEach(async () => {
-    const moduleRef = await createTestingModule({
-      imports: [SsmInitModule.register('ENV_PARAM_ROOT')],
-    }).compile();
+  beforeEach(() => {
+    snapshotEnv();
+    setEnv('ENV_PARAM_ROOT', 'ENV_PARAM_ROOT');
 
-    service = moduleRef.get(SsmInitService);
+    service = new SsmInitService(createMockSsm(), 'ENV_PARAM_ROOT');
+  });
+
+  afterEach(() => {
+    cleanEnv();
   });
 
   describe('Given the PathUndefined error factory', () => {
@@ -40,6 +46,14 @@ describe('Given an init service', () => {
   });
 
   describe('Given a request to eval SSM parameters', () => {
+    it('Should throw ValueUndefined when the param root env var is undefined', async () => {
+      delete process.env.ENV_PARAM_ROOT;
+
+      await expect(() => service.evalParameters()).rejects.toThrow(
+        ValueUndefined.make('ENV_PARAM_ROOT'),
+      );
+    });
+
     it('Should resolve when parameters are returned by path', async () => {
       ssmService.getParametersByPath.mockResolvedValueOnce(
         new Mock<GetParametersByPathCommandOutput>()

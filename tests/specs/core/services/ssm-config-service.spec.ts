@@ -4,20 +4,25 @@ import {Mock} from 'moq.ts';
 
 import {ValueUndefined} from '../../../../src/core/errors/value-undefined';
 import {SsmConfigService} from '../../../../src/core/services/ssm-config-service';
-import {ssmConfigModule} from '../../../../src/core/ssm-config-module';
 import {
-  configService,
-  createTestingModule,
+  cleanEnv,
+  createMockSsm,
+  setEnv,
+  snapshotEnv,
   ssmService,
-} from '../../../__mocks__/create-testing-module';
+} from '../../../__mocks__/test-helpers';
 
 describe('Given a config service', () => {
   let service: SsmConfigService;
 
-  beforeEach(async () => {
-    const moduleRef = await createTestingModule(ssmConfigModule).compile();
+  beforeEach(() => {
+    snapshotEnv();
 
-    service = moduleRef.get(SsmConfigService);
+    service = new SsmConfigService(createMockSsm());
+  });
+
+  afterEach(() => {
+    cleanEnv();
   });
 
   describe('Given the ValueUndefined error factory', () => {
@@ -43,7 +48,7 @@ describe('Given a config service', () => {
       const key = faker.string.alpha(8);
       const rawValue = faker.string.alpha();
 
-      configService.getOrThrow.mockReturnValueOnce(rawValue);
+      setEnv(key, rawValue);
 
       const result = await service.getOrThrow(key);
 
@@ -53,29 +58,29 @@ describe('Given a config service', () => {
     it('Should not call getParameter when the value is not an ARN', async () => {
       const key = faker.string.alpha(8);
 
-      configService.getOrThrow.mockReturnValueOnce(faker.string.alpha());
+      setEnv(key, faker.string.alpha());
 
       await service.getOrThrow(key);
 
       expect(ssmService.getParameter).not.toHaveBeenCalled();
     });
 
-    it('Should propagate when getOrThrow throws', async () => {
+    it('Should throw ValueUndefined when the env var is undefined', async () => {
       const key = faker.string.alpha(8);
-      const failure = new Error(faker.string.alpha());
 
-      configService.getOrThrow.mockImplementationOnce(() => {
-        throw failure;
-      });
+      delete process.env[key];
 
-      await expect(() => service.getOrThrow(key)).rejects.toThrow(failure);
+      await expect(() => service.getOrThrow(key)).rejects.toThrow(
+        ValueUndefined.make(key),
+      );
     });
 
     it('Should return the SSM value when the value is an ARN', async () => {
       const key = faker.string.alpha(8);
       const resolvedValue = faker.string.alpha();
 
-      configService.getOrThrow.mockReturnValueOnce(
+      setEnv(
+        key,
         'arn:aws:ssm:us-east-1:123456789012:parameter/database-password',
       );
       ssmService.getParameter.mockResolvedValueOnce(
@@ -94,7 +99,8 @@ describe('Given a config service', () => {
       const key = faker.string.alpha(8);
       const value = 'arn:aws:ssm:us-east-1:123456789012:parameter/redis-url';
 
-      configService.getOrThrow.mockReturnValueOnce(value);
+      setEnv(key, value);
+
       ssmService.getParameter.mockResolvedValueOnce(
         new Mock<GetParameterCommandOutput>()
           .setup(mock => mock.Parameter)
@@ -112,9 +118,8 @@ describe('Given a config service', () => {
     it('Should pass WithDecryption true to getParameter', async () => {
       const key = faker.string.alpha(8);
 
-      configService.getOrThrow.mockReturnValueOnce(
-        'arn:aws:ssm:us-east-1:123456789012:parameter/api-key',
-      );
+      setEnv(key, 'arn:aws:ssm:us-east-1:123456789012:parameter/api-key');
+
       ssmService.getParameter.mockResolvedValueOnce(
         new Mock<GetParameterCommandOutput>()
           .setup(mock => mock.Parameter)
@@ -132,9 +137,8 @@ describe('Given a config service', () => {
     it('Should throw ValueUndefined when Parameter is undefined', async () => {
       const key = faker.string.alpha(8);
 
-      configService.getOrThrow.mockReturnValueOnce(
-        'arn:aws:ssm:us-east-1:123456789012:parameter/db-host',
-      );
+      setEnv(key, 'arn:aws:ssm:us-east-1:123456789012:parameter/db-host');
+
       ssmService.getParameter.mockResolvedValueOnce(
         new Mock<GetParameterCommandOutput>()
           .setup(mock => mock.Parameter)
@@ -150,9 +154,8 @@ describe('Given a config service', () => {
     it('Should throw ValueUndefined when Parameter has no Value', async () => {
       const key = faker.string.alpha(8);
 
-      configService.getOrThrow.mockReturnValueOnce(
-        'arn:aws:ssm:us-east-1:123456789012:parameter/mail-token',
-      );
+      setEnv(key, 'arn:aws:ssm:us-east-1:123456789012:parameter/mail-token');
+
       ssmService.getParameter.mockResolvedValueOnce(
         new Mock<GetParameterCommandOutput>()
           .setup(mock => mock.Parameter)
@@ -169,7 +172,7 @@ describe('Given a config service', () => {
       const key = faker.string.alpha(8);
       const rawValue = 'arn:aws:ssm:us-east-1:123456789012:other/foo';
 
-      configService.getOrThrow.mockReturnValueOnce(rawValue);
+      setEnv(key, rawValue);
 
       const result = await service.getOrThrow(key);
 
@@ -180,7 +183,7 @@ describe('Given a config service', () => {
       const key = faker.string.alpha(8);
       const rawValue = 'arn:aws:s3:us-east-1:123456789012:parameter/foo';
 
-      configService.getOrThrow.mockReturnValueOnce(rawValue);
+      setEnv(key, rawValue);
 
       const result = await service.getOrThrow(key);
 
@@ -191,7 +194,7 @@ describe('Given a config service', () => {
       const key = faker.string.alpha(8);
       const rawValue = 'arn:aws:ssm:us-east-1:12345:parameter/foo';
 
-      configService.getOrThrow.mockReturnValueOnce(rawValue);
+      setEnv(key, rawValue);
 
       const result = await service.getOrThrow(key);
 
@@ -202,7 +205,7 @@ describe('Given a config service', () => {
       const key = faker.string.alpha(8);
       const rawValue = 'arn:aws:ssm:us-east-1:123456789012:parameter/';
 
-      configService.getOrThrow.mockReturnValueOnce(rawValue);
+      setEnv(key, rawValue);
 
       const result = await service.getOrThrow(key);
 
@@ -214,7 +217,7 @@ describe('Given a config service', () => {
       const rawValue =
         'prefix-arn:aws:ssm:us-east-1:123456789012:parameter/foo';
 
-      configService.getOrThrow.mockReturnValueOnce(rawValue);
+      setEnv(key, rawValue);
 
       const result = await service.getOrThrow(key);
 
@@ -225,7 +228,7 @@ describe('Given a config service', () => {
       const key = faker.string.alpha(8);
       const rawValue = 'arn:aws:ssm:us-east-1:123456789012:parameter/foo bar';
 
-      configService.getOrThrow.mockReturnValueOnce(rawValue);
+      setEnv(key, rawValue);
 
       const result = await service.getOrThrow(key);
 

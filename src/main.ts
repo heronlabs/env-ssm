@@ -1,19 +1,20 @@
-import {NestFactory} from '@nestjs/core';
+import {SSM} from '@aws-sdk/client-ssm';
 
 import {SsmConfigService} from './core/services/ssm-config-service';
 import {SsmInitService} from './core/services/ssm-init-service';
-import {SsmConfigModule} from './core/ssm-config-module';
-import {SsmInitModule} from './core/ssm-init-module';
 
-export {SsmConfigModule, SsmConfigService, SsmInitService};
+export {SsmConfigService, SsmInitService};
+export {PathUndefined} from './core/errors/path-undefined';
+export {ValueUndefined} from './core/errors/value-undefined';
 
 export class ParameterFactory {
   static async make(paramRoot: string): Promise<SsmInitService> {
-    const app = await NestFactory.createApplicationContext(
-      SsmInitModule.register(paramRoot),
-      {logger: false},
-    );
+    return new SsmInitService(new SSM({apiVersion: '2014-11-06'}), paramRoot);
+  }
+}
 
-    return app.get(SsmInitService);
+export class SsmConfigFactory {
+  static make(): SsmConfigService {
+    return new SsmConfigService(new SSM({apiVersion: '2014-11-06'}));
   }
 }

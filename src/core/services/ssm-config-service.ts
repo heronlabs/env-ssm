@@ -1,16 +1,17 @@
 import {SSM} from '@aws-sdk/client-ssm';
-import {Injectable} from '@nestjs/common';
-import {ConfigService} from '@nestjs/config';
 
 import {ValueUndefined} from '../errors/value-undefined';
 
-@Injectable()
 export class SsmConfigService {
   async getOrThrow(key: string): Promise<string> {
     const SSM_PARAMETER_ARN =
       /^arn:aws:ssm:[a-z0-9-]+:[0-9]{12}:parameter\/\S+$/;
 
-    const value = this.configService.getOrThrow<string>(key);
+    const value = process.env[key];
+
+    if (value === undefined) {
+      throw ValueUndefined.make(key);
+    }
 
     if (!SSM_PARAMETER_ARN.test(value)) {
       return value;
@@ -28,8 +29,5 @@ export class SsmConfigService {
     return result.Parameter.Value;
   }
 
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly parameter: SSM,
-  ) {}
+  constructor(private readonly parameter: SSM) {}
 }

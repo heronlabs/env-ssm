@@ -6,18 +6,12 @@
   "dependencies": {
     "@aws-sdk/client-ssm": "^3.1045.0"
   },
-  "description": "Load AWS SSM Parameter Store into process.env for NestJS apps",
+  "description": "Load AWS SSM Parameter Store into process.env",
   "devDependencies": {
     "@faker-js/faker": "^9.9.0",
-    "@nestjs/cli": "^11.0.21",
-    "@nestjs/common": "^11.1.18",
-    "@nestjs/config": "^4.0.4",
-    "@nestjs/core": "^11.1.18",
-    "@nestjs/testing": "^11.1.18",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/typescript-checker": "^9.6.1",
     "@stryker-mutator/vitest-runner": "^9.6.1",
-    "@swc/core": "^1.13.5",
     "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "^4.1.6",
     "dependency-cruiser": "^17.4.2",
@@ -28,11 +22,8 @@
     "gts": "^7.0.0",
     "jiti": "^2.7.0",
     "moq.ts": "^10.0.8",
-    "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.60.0",
-    "unplugin-swc": "^1.5.9",
     "vitest": "^4.1.6"
   },
   "engineStrict": true,
@@ -48,12 +39,6 @@
   "main": "./bin/src/main.js",
   "name": "@heronlabs/env-ssm",
   "packageManager": "pnpm@10.33.2",
-  "peerDependencies": {
-    "@nestjs/common": "^11.0.0",
-    "@nestjs/config": "^4.0.0",
-    "@nestjs/core": "^11.0.0",
-    "reflect-metadata": "^0.2.0"
-  },
   "pnpm": {
     "overrides": {
       "tmp@<0.2.4": ">=0.2.4"
@@ -68,7 +53,7 @@
     "url": "git+https://github.com/heronlabs/env-ssm.git"
   },
   "scripts": {
-    "build": "nest build --path tsconfig.bin.json",
+    "build": "rm -rf bin && tsc -p tsconfig.bin.json",
     "dep:cruise": "depcruise src --config .dependency-cruiser.json",
     "lint:check": "gts lint && eslint \"**/*.json\" \"**/*.yml\" \"**/*.yaml\" --no-error-on-unmatched-pattern",
     "lint:fix": "gts fix && eslint \"**/*.json\" \"**/*.yml\" \"**/*.yaml\" --fix --no-error-on-unmatched-pattern",

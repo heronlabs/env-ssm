@@ -3,14 +3,17 @@ import {
   Parameter,
   SSM,
 } from '@aws-sdk/client-ssm';
-import {Inject} from '@nestjs/common';
-import {ConfigService} from '@nestjs/config';
 
-import {PathUndefined} from '../errors/value-undefined';
+import {PathUndefined} from '../errors/path-undefined';
+import {ValueUndefined} from '../errors/value-undefined';
 
 export class SsmInitService {
   async evalParameters(): Promise<void> {
-    const path = this.configService.getOrThrow<string>(this.paramRoot);
+    const path = process.env[this.paramRoot];
+
+    if (!path) {
+      throw ValueUndefined.make(this.paramRoot);
+    }
 
     const parameters: Parameter[] = [];
 
@@ -49,8 +52,7 @@ export class SsmInitService {
   }
 
   constructor(
-    private readonly configService: ConfigService,
     private readonly parameter: SSM,
-    @Inject('ParamRoot') private readonly paramRoot: string,
+    private readonly paramRoot: string,
   ) {}
 }

@@ -9,6 +9,14 @@ import {ValueUndefined} from '../errors/value-undefined';
 
 export class SsmInitService {
   async evalParameters(): Promise<void> {
+    const parameters = await this.fetchParameters();
+
+    Object.entries(parameters).forEach(([name, value]) => {
+      process.env[name] = value;
+    });
+  }
+
+  async fetchParameters(): Promise<Record<string, string>> {
     const path = process.env[this.paramRoot];
 
     if (!path) {
@@ -38,6 +46,8 @@ export class SsmInitService {
       throw PathUndefined.make(path);
     }
 
+    const values: Record<string, string> = {};
+
     parameters.forEach(parameter => {
       const {Name, Value} = parameter;
 
@@ -46,9 +56,11 @@ export class SsmInitService {
       const parameterName = names.pop();
 
       if (parameterName && Value) {
-        process.env[parameterName] = Value;
+        values[parameterName] = Value;
       }
     });
+
+    return values;
   }
 
   constructor(

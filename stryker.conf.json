@@ -21,6 +21,7 @@
   "mutate": [
     "src/**/*.ts",
     "!src/main.ts",
+    "!src/cli.ts",
     "!src/**/*.d.ts",
     "!src/**/*factory.ts",
     "!src/**/*-module.ts"

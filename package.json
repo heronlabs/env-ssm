@@ -1,5 +1,8 @@
 {
   "author": "Heron Labs",
+  "bin": {
+    "env-ssm": "./bin/src/cli.js"
+  },
   "bugs": {
     "url": "https://github.com/heronlabs/env-ssm/issues"
   },

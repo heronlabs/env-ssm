@@ -3,7 +3,7 @@ export type CliFormat = 'dotenv' | 'exports';
 const USAGE = 'Usage: env-ssm [--format=exports|--format=dotenv]';
 
 export const escapeExportsValue = (value: string): string =>
-  value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  value.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');
 
 export const escapeDotenvValue = (value: string): string =>
   value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');

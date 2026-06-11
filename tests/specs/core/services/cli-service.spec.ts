@@ -29,6 +29,14 @@ describe('Given the CLI service', () => {
     it('Should escape backslashes before single quotes', () => {
       expect(escapeExportsValue("\\'")).toBe("\\\\\\'");
     });
+
+    it('Should escape every newline', () => {
+      expect(escapeExportsValue('a\nb\nc')).toBe('a\\nb\\nc');
+    });
+
+    it('Should escape backslashes before newlines', () => {
+      expect(escapeExportsValue('a\\b\nc')).toBe('a\\\\b\\nc');
+    });
   });
 
   describe('Given a request to escape a dotenv value', () => {
@@ -65,6 +73,12 @@ describe('Given the CLI service', () => {
     it('Should escape values for shell eval', () => {
       expect(formatExports({KEY: "it's \\ here"})).toBe(
         "export KEY=$'it\\'s \\\\ here'",
+      );
+    });
+
+    it('Should keep a multiline value on a single export line', () => {
+      expect(formatExports({FIRST: 'one\ntwo', SECOND: 'three'})).toBe(
+        "export FIRST=$'one\\ntwo'\nexport SECOND=$'three'",
       );
     });
   });

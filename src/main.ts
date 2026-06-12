@@ -1,20 +1,28 @@
 import {SSM} from '@aws-sdk/client-ssm';
 
-import {SsmConfigService} from './core/services/ssm-config-service';
-import {SsmInitService} from './core/services/ssm-init-service';
+import {ConfigService} from './core/services/config-service';
+import {BashService} from './core/services/init/bash-service';
+import {EnvService} from './core/services/init/env-service';
+import {ParameterService} from './core/services/init/parameter-service';
 
-export {SsmConfigService, SsmInitService};
-export {PathUndefined} from './core/errors/path-undefined';
-export {ValueUndefined} from './core/errors/value-undefined';
+export {BashService, ConfigService, EnvService, ParameterService};
 
-export class ParameterFactory {
-  static async make(paramRoot: string): Promise<SsmInitService> {
-    return new SsmInitService(new SSM({apiVersion: '2014-11-06'}), paramRoot);
+export class SsmInitFactory {
+  static env(paramRoot: string): EnvService {
+    return new EnvService(
+      new ParameterService(new SSM({apiVersion: '2014-11-06'}), paramRoot),
+    );
+  }
+
+  static bash(paramRoot: string): BashService {
+    return new BashService(
+      new ParameterService(new SSM({apiVersion: '2014-11-06'}), paramRoot),
+    );
   }
 }
 
 export class SsmConfigFactory {
-  static make(): SsmConfigService {
-    return new SsmConfigService(new SSM({apiVersion: '2014-11-06'}));
+  static make(): ConfigService {
+    return new ConfigService(new SSM({apiVersion: '2014-11-06'}));
   }
 }

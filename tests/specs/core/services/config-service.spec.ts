@@ -2,8 +2,7 @@ import {GetParameterCommandOutput} from '@aws-sdk/client-ssm';
 import {faker} from '@faker-js/faker';
 import {Mock} from 'moq.ts';
 
-import {ValueUndefined} from '../../../../src/core/errors/value-undefined';
-import {SsmConfigService} from '../../../../src/core/services/ssm-config-service';
+import {ConfigService} from '../../../../src/core/services/config-service';
 import {
   cleanEnv,
   createMockSsm,
@@ -13,34 +12,15 @@ import {
 } from '../../../__mocks__/test-helpers';
 
 describe('Given a config service', () => {
-  let service: SsmConfigService;
+  let service: ConfigService;
 
   beforeEach(() => {
     snapshotEnv();
-
-    service = new SsmConfigService(createMockSsm());
+    service = new ConfigService(createMockSsm());
   });
 
   afterEach(() => {
     cleanEnv();
-  });
-
-  describe('Given the ValueUndefined error factory', () => {
-    it('Should return a ValueUndefined instance', () => {
-      const key = faker.string.alpha(8);
-
-      const error = ValueUndefined.make(key);
-
-      expect(error).toBeInstanceOf(ValueUndefined);
-    });
-
-    it('Should produce a "Value Undefined" prefixed message', () => {
-      const key = faker.string.alpha(8);
-
-      const error = ValueUndefined.make(key);
-
-      expect(error.message).toBe(`'Value Undefined' | ${key}`);
-    });
   });
 
   describe('Given a request to get or throw a value', () => {
@@ -65,13 +45,13 @@ describe('Given a config service', () => {
       expect(ssmService.getParameter).not.toHaveBeenCalled();
     });
 
-    it('Should throw ValueUndefined when the env var is undefined', async () => {
+    it('Should throw Value Undefined when the env var is undefined', async () => {
       const key = faker.string.alpha(8);
 
       delete process.env[key];
 
       await expect(() => service.getOrThrow(key)).rejects.toThrow(
-        ValueUndefined.make(key),
+        Error(`Value Undefined | ${key}`),
       );
     });
 
@@ -83,6 +63,7 @@ describe('Given a config service', () => {
         key,
         'arn:aws:ssm:us-east-1:123456789012:parameter/database-password',
       );
+
       ssmService.getParameter.mockResolvedValueOnce(
         new Mock<GetParameterCommandOutput>()
           .setup(mock => mock.Parameter)
@@ -134,7 +115,7 @@ describe('Given a config service', () => {
       );
     });
 
-    it('Should throw ValueUndefined when Parameter is undefined', async () => {
+    it('Should throw Value Undefined when Parameter is undefined', async () => {
       const key = faker.string.alpha(8);
 
       setEnv(key, 'arn:aws:ssm:us-east-1:123456789012:parameter/db-host');
@@ -147,11 +128,11 @@ describe('Given a config service', () => {
       );
 
       await expect(() => service.getOrThrow(key)).rejects.toThrow(
-        ValueUndefined.make(key),
+        Error(`Value Undefined | ${key}`),
       );
     });
 
-    it('Should throw ValueUndefined when Parameter has no Value', async () => {
+    it('Should throw Value Undefined when Parameter has no Value', async () => {
       const key = faker.string.alpha(8);
 
       setEnv(key, 'arn:aws:ssm:us-east-1:123456789012:parameter/mail-token');
@@ -164,7 +145,7 @@ describe('Given a config service', () => {
       );
 
       await expect(() => service.getOrThrow(key)).rejects.toThrow(
-        ValueUndefined.make(key),
+        Error(`Value Undefined | ${key}`),
       );
     });
 

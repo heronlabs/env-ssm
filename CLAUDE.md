@@ -1,36 +1,42 @@
 # env-ssm — SSM Parameter Loader
 
-Standalone, framework-free library (`@heronlabs/env-ssm`, published to npmjs). Loads AWS SSM Parameter Store values into `process.env`. Ejected from the `heronlabs/workloads` monorepo. A separate `nestjs-env-ssm` wrapper layers NestJS DI on top of this core.
+Standalone, framework-free library (`@heronlabs/env-ssm`, published to npmjs). Loads AWS SSM Parameter Store values into `process.env` (in-process) or shell `export`s (npx CLI). Ejected from the `heronlabs/workloads` monorepo. A separate `nestjs-env-ssm` wrapper layers NestJS DI on top of this core.
 
 ## Stack
 
 - `@aws-sdk/client-ssm` — the only runtime dependency; plain classes, no DI container
 - Exported entry: `./bin/src/main.js` (`main:`, `types:`)
 - Built with `tsc -p tsconfig.bin.json`; tests run on vitest's default esbuild transform (no swc)
+- No custom error classes — every failure throws a plain `Error` (`Value Undefined | <name>`)
 
 ## Structure
 
 ```
 src/
+├── cli.ts                             # npx entry: BashService.eval() → stdout for `eval`
 ├── core/
-│   ├── errors/value-undefined.ts
 │   └── services/
-│       ├── ssm-init-service.ts        # evalParameters(): fetches path, writes to process.env
-│       └── ssm-config-service.ts      # getOrThrow(): resolves a single value, optionally from an ARN
-└── main.ts                            # exports ParameterFactory + SsmConfigFactory + services + errors
+│       ├── config-service.ts          # getOrThrow(): resolve one value (literal or ARN)
+│       └── init/
+│           ├── parameter-service.ts   # fetchParameters(): SSM path → { leaf: value }, shared fetch
+│           ├── env-service.ts         # eval(): writes fetched params raw → process.env
+│           └── bash-service.ts        # eval(): fetched params → escaped `export NAME=$'value'` lines
+└── main.ts                            # SsmInitFactory + SsmConfigFactory + service classes
 ```
+
+`ParameterService` is the shared SSM fetch; `EnvService` and `BashService` are injected with one and consume it — same parameters, two sinks (raw into `process.env`, escaped to stdout). No inheritance.
 
 ## API
 
 ```ts
-const factory = await ParameterFactory.make('AWS_ENV_PATH');
-await factory.evalParameters();
+await SsmInitFactory.env('AWS_ENV_PATH').eval();
 ```
 
-- `ParameterFactory.make(paramRoot)` — constructs and returns an `SsmInitService` bound to `paramRoot` (a `new SSM(...)` client wired in directly)
-- `SsmInitService.evalParameters()` — reads `process.env[paramRoot]` as the SSM path, fetches all parameters under it and writes leaf names to `process.env`
-- Throws `ValueUndefined` if `process.env[paramRoot]` is unset; throws `PathUndefined` if the path returns zero parameters
-- `SsmConfigService.getOrThrow(key)` — reads `process.env[key]` and resolves a single value (literal or SSM ARN); throws `ValueUndefined` if the key is unset or the ARN resolves to no value. Construct one with `SsmConfigFactory.make()`
+- `SsmInitFactory.env(paramRoot)` / `.bash(paramRoot)` — construct an `EnvService` / `BashService`, each wired to a fresh `ParameterService` (`new SSM(...)` client + `paramRoot`); synchronous
+- `ParameterService.fetchParameters()` — reads `process.env[paramRoot]` as the SSM path, fetches every parameter one level under it (`WithDecryption: true`, paginated) and returns `{ leaf: value }`. Throws `Value Undefined | <paramRoot>` if the root env var is unset; returns `{}` (no throw) when the path has zero parameters
+- `EnvService.eval()` — `fetchParameters()` then writes each leaf to `process.env` **raw** (no escaping, no name rewriting); returns `void`
+- `BashService.eval()` — `fetchParameters()` then returns `export NAME=$'value'` lines (values escaped for bash ANSI-C quoting, names sanitized to valid shell identifiers) for the `cli.ts` / `eval` path; does not touch `process.env`. Throws `Name Collision | <a>, <b> -> <identifier>` when two names sanitize to the same identifier (rejects the silent overwrite). Sanitize + escape are bash-only — the `env` path writes raw, since bash decodes the escaping back to the original value anyway
+- `ConfigService.getOrThrow(key)` — reads `process.env[key]` and resolves a single value (literal or SSM ARN); throws `Value Undefined | <key>` if the key is unset or the ARN resolves to no value. Construct one with `SsmConfigFactory.make()`
 
 ## Verify
 

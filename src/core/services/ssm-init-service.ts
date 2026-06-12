@@ -8,7 +8,7 @@ import {PathUndefined} from '../errors/path-undefined';
 import {ValueUndefined} from '../errors/value-undefined';
 
 export class SsmInitService {
-  async evalParameters(): Promise<void> {
+  async fetchParameters(): Promise<Record<string, string>> {
     const path = process.env[this.paramRoot];
 
     if (!path) {
@@ -38,6 +38,8 @@ export class SsmInitService {
       throw PathUndefined.make(path);
     }
 
+    const resolved: Record<string, string> = {};
+
     parameters.forEach(parameter => {
       const {Name, Value} = parameter;
 
@@ -46,8 +48,18 @@ export class SsmInitService {
       const parameterName = names.pop();
 
       if (parameterName && Value) {
-        process.env[parameterName] = Value;
+        resolved[parameterName] = Value;
       }
+    });
+
+    return resolved;
+  }
+
+  async evalParameters(): Promise<void> {
+    const parameters = await this.fetchParameters();
+
+    Object.entries(parameters).forEach(([name, value]) => {
+      process.env[name] = value;
     });
   }
 

@@ -45,6 +45,225 @@ describe('Given an init service', () => {
     });
   });
 
+  describe('Given a request to fetch SSM parameters', () => {
+    it('Should throw ValueUndefined when the param root env var is undefined', async () => {
+      delete process.env.ENV_PARAM_ROOT;
+
+      await expect(() => service.fetchParameters()).rejects.toThrow(
+        ValueUndefined.make('ENV_PARAM_ROOT'),
+      );
+    });
+
+    it('Should throw PathUndefined when Parameters is undefined', async () => {
+      ssmService.getParametersByPath.mockResolvedValueOnce(
+        new Mock<GetParametersByPathCommandOutput>()
+          .setup(mock => mock.Parameters)
+          .returns(undefined)
+          .object(),
+      );
+
+      await expect(() => service.fetchParameters()).rejects.toThrow(
+        PathUndefined.make('ENV_PARAM_ROOT'),
+      );
+    });
+
+    it('Should throw PathUndefined when Parameters is an empty array', async () => {
+      ssmService.getParametersByPath.mockResolvedValueOnce(
+        new Mock<GetParametersByPathCommandOutput>()
+          .setup(mock => mock.Parameters)
+          .returns([])
+          .object(),
+      );
+
+      await expect(() => service.fetchParameters()).rejects.toThrow(
+        PathUndefined.make('ENV_PARAM_ROOT'),
+      );
+    });
+
+    it('Should pass the resolved path to getParametersByPath', async () => {
+      ssmService.getParametersByPath.mockResolvedValueOnce(
+        new Mock<GetParametersByPathCommandOutput>()
+          .setup(mock => mock.Parameters)
+          .returns([
+            {
+              Name: `/foo/bar/${faker.string.alpha()}`,
+              Value: faker.string.alpha(),
+            },
+          ])
+          .object(),
+      );
+
+      await service.fetchParameters();
+
+      expect(ssmService.getParametersByPath).toHaveBeenCalledWith(
+        expect.objectContaining({Path: 'ENV_PARAM_ROOT', WithDecryption: true}),
+      );
+    });
+
+    it('Should map the last path segment to its value', async () => {
+      const paramName = `leaf_${faker.string.alpha(10)}`;
+      const paramValue = faker.string.alpha();
+
+      ssmService.getParametersByPath.mockResolvedValueOnce(
+        new Mock<GetParametersByPathCommandOutput>()
+          .setup(mock => mock.Parameters)
+          .returns([{Name: `/foo/bar/${paramName}`, Value: paramValue}])
+          .object(),
+      );
+
+      const result = await service.fetchParameters();
+
+      expect(result).toEqual({[paramName]: paramValue});
+    });
+
+    it('Should omit an entry when Name is present but Value is undefined', async () => {
+      const paramName = faker.string.alpha();
+
+      ssmService.getParametersByPath.mockResolvedValueOnce(
+        new Mock<GetParametersByPathCommandOutput>()
+          .setup(mock => mock.Parameters)
+          .returns([{Name: `/foo/bar/${paramName}`, Value: undefined}])
+          .object(),
+      );
+
+      const result = await service.fetchParameters();
+
+      expect(result).toEqual({});
+    });
+
+    it('Should omit an entry when Value is present but Name is undefined', async () => {
+      ssmService.getParametersByPath.mockResolvedValueOnce(
+        new Mock<GetParametersByPathCommandOutput>()
+          .setup(mock => mock.Parameters)
+          .returns([{Name: undefined, Value: faker.string.alpha()}])
+          .object(),
+      );
+
+      const result = await service.fetchParameters();
+
+      expect(result).toEqual({});
+    });
+
+    it('Should map parameters from every page when paginating', async () => {
+      const firstName = `page1_${faker.string.alpha(10)}`;
+      const firstValue = faker.string.alpha();
+      const secondName = `page2_${faker.string.alpha(10)}`;
+      const secondValue = faker.string.alpha();
+      const nextToken = faker.string.alpha(16);
+
+      ssmService.getParametersByPath
+        .mockResolvedValueOnce(
+          new Mock<GetParametersByPathCommandOutput>()
+            .setup(mock => mock.Parameters)
+            .returns([{Name: `/foo/bar/${firstName}`, Value: firstValue}])
+            .setup(mock => mock.NextToken)
+            .returns(nextToken)
+            .object(),
+        )
+        .mockResolvedValueOnce(
+          new Mock<GetParametersByPathCommandOutput>()
+            .setup(mock => mock.Parameters)
+            .returns([{Name: `/foo/bar/${secondName}`, Value: secondValue}])
+            .setup(mock => mock.NextToken)
+            .returns(undefined)
+            .object(),
+        );
+
+      const result = await service.fetchParameters();
+
+      expect(result).toEqual({
+        [firstName]: firstValue,
+        [secondName]: secondValue,
+      });
+    });
+
+    it('Should forward NextToken to the subsequent request', async () => {
+      const nextToken = faker.string.alpha(16);
+
+      ssmService.getParametersByPath
+        .mockResolvedValueOnce(
+          new Mock<GetParametersByPathCommandOutput>()
+            .setup(mock => mock.Parameters)
+            .returns([
+              {
+                Name: `/foo/bar/${faker.string.alpha()}`,
+                Value: faker.string.alpha(),
+              },
+            ])
+            .setup(mock => mock.NextToken)
+            .returns(nextToken)
+            .object(),
+        )
+        .mockResolvedValueOnce(
+          new Mock<GetParametersByPathCommandOutput>()
+            .setup(mock => mock.Parameters)
+            .returns([
+              {
+                Name: `/foo/bar/${faker.string.alpha()}`,
+                Value: faker.string.alpha(),
+              },
+            ])
+            .setup(mock => mock.NextToken)
+            .returns(undefined)
+            .object(),
+        );
+
+      await service.fetchParameters();
+
+      expect(ssmService.getParametersByPath).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({NextToken: nextToken}),
+      );
+    });
+
+    it('Should not pass a NextToken on the first request', async () => {
+      ssmService.getParametersByPath.mockResolvedValueOnce(
+        new Mock<GetParametersByPathCommandOutput>()
+          .setup(mock => mock.Parameters)
+          .returns([
+            {
+              Name: `/foo/bar/${faker.string.alpha()}`,
+              Value: faker.string.alpha(),
+            },
+          ])
+          .setup(mock => mock.NextToken)
+          .returns(undefined)
+          .object(),
+      );
+
+      await service.fetchParameters();
+
+      expect(ssmService.getParametersByPath).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({NextToken: undefined}),
+      );
+    });
+
+    it('Should throw PathUndefined when every page yields no parameters', async () => {
+      ssmService.getParametersByPath
+        .mockResolvedValueOnce(
+          new Mock<GetParametersByPathCommandOutput>()
+            .setup(mock => mock.Parameters)
+            .returns([])
+            .setup(mock => mock.NextToken)
+            .returns(faker.string.alpha(16))
+            .object(),
+        )
+        .mockResolvedValueOnce(
+          new Mock<GetParametersByPathCommandOutput>()
+            .setup(mock => mock.Parameters)
+            .returns([])
+            .setup(mock => mock.NextToken)
+            .returns(undefined)
+            .object(),
+        );
+
+      await expect(() => service.fetchParameters()).rejects.toThrow(
+        PathUndefined.make('ENV_PARAM_ROOT'),
+      );
+    });
+  });
+
   describe('Given a request to eval SSM parameters', () => {
     it('Should throw ValueUndefined when the param root env var is undefined', async () => {
       delete process.env.ENV_PARAM_ROOT;

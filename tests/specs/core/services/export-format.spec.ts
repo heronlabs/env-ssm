@@ -3,6 +3,7 @@ import {faker} from '@faker-js/faker';
 import {
   escapeExportsValue,
   formatExports,
+  sanitizeName,
 } from '../../../../src/core/services/export-format';
 
 describe('Given the exports formatter', () => {
@@ -34,6 +35,32 @@ describe('Given the exports formatter', () => {
     });
   });
 
+  describe('Given a request to sanitize a name', () => {
+    it('Should return an already-valid name unchanged', () => {
+      expect(sanitizeName('FOO_BAR_BAZ')).toBe('FOO_BAR_BAZ');
+    });
+
+    it('Should replace dots with underscores', () => {
+      expect(sanitizeName('foo.bar.baz')).toBe('foo_bar_baz');
+    });
+
+    it('Should replace dashes, slashes and spaces with underscores', () => {
+      expect(sanitizeName('a-b/c d')).toBe('a_b_c_d');
+    });
+
+    it('Should prefix an underscore when the name starts with a digit', () => {
+      expect(sanitizeName('9to5')).toBe('_9to5');
+    });
+
+    it('Should not double-prefix a name that already starts with an underscore', () => {
+      expect(sanitizeName('_x')).toBe('_x');
+    });
+
+    it('Should not prefix a digit that is not leading', () => {
+      expect(sanitizeName('a9')).toBe('a9');
+    });
+  });
+
   describe('Given a request to format parameters as exports', () => {
     it('Should return an empty string for an empty object', () => {
       expect(formatExports({})).toBe('');
@@ -50,6 +77,12 @@ describe('Given the exports formatter', () => {
       const name = faker.string.alpha();
 
       expect(formatExports({[name]: "a'b"})).toBe(`export ${name}=$'a\\'b'`);
+    });
+
+    it('Should sanitize the name and escape the value in one entry', () => {
+      expect(formatExports({'foo.bar': "pa'ss"})).toBe(
+        "export foo_bar=$'pa\\'ss'",
+      );
     });
 
     it('Should join multiple entries with a newline', () => {

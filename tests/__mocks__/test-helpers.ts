@@ -2,6 +2,8 @@ import {SSM} from '@aws-sdk/client-ssm';
 import {Mock} from 'moq.ts';
 import {Mock as ViMock, vi} from 'vitest';
 
+import {ParameterService} from '../../src/core/services/init/parameter-service';
+
 export const ssmService: {
   getParameter: ViMock;
   getParametersByPath: ViMock;
@@ -16,6 +18,14 @@ export const createMockSsm = (): SSM =>
     .returns(ssmService.getParameter)
     .setup(mock => mock.getParametersByPath)
     .returns(ssmService.getParametersByPath)
+    .object();
+
+export const createMockParameterService = (
+  parameters: Record<string, string>,
+): ParameterService =>
+  new Mock<ParameterService>()
+    .setup(mock => mock.fetchParameters())
+    .returns(Promise.resolve(parameters))
     .object();
 
 let envSnapshot: NodeJS.ProcessEnv = {};

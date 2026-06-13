@@ -2,59 +2,94 @@ import {GetParametersByPathCommandOutput} from '@aws-sdk/client-ssm';
 import {faker} from '@faker-js/faker';
 import {Mock} from 'moq.ts';
 
-import {PathUndefined} from '../../../../src/core/errors/path-undefined';
-import {ValueUndefined} from '../../../../src/core/errors/value-undefined';
-import {SsmInitService} from '../../../../src/core/services/ssm-init-service';
+import {ParameterService} from '../../../../../src/core/services/init/parameter-service';
 import {
   cleanEnv,
   createMockSsm,
   setEnv,
   snapshotEnv,
   ssmService,
-} from '../../../__mocks__/test-helpers';
+} from '../../../../__mocks__/test-helpers';
 
-describe('Given an init service', () => {
-  let service: SsmInitService;
+describe('Given a parameter service', () => {
+  let service: ParameterService;
 
   beforeEach(() => {
     snapshotEnv();
-    setEnv('ENV_PARAM_ROOT', 'ENV_PARAM_ROOT');
+    setEnv('ENV_PARAM_ROOT', 'ENV_PARAM_ROOT_VALUE');
 
-    service = new SsmInitService(createMockSsm(), 'ENV_PARAM_ROOT');
+    service = new ParameterService(createMockSsm(), 'ENV_PARAM_ROOT');
   });
 
   afterEach(() => {
     cleanEnv();
   });
 
-  describe('Given the PathUndefined error factory', () => {
-    it('Should return a PathUndefined instance', () => {
-      const path = `/${faker.string.alpha(8)}`;
-
-      const error = PathUndefined.make(path);
-
-      expect(error).toBeInstanceOf(PathUndefined);
-    });
-
-    it('Should produce a "Path Undefined" prefixed message', () => {
-      const path = `/${faker.string.alpha(8)}`;
-
-      const error = PathUndefined.make(path);
-
-      expect(error.message).toBe(`'Path Undefined' | ${path}`);
-    });
-  });
-
-  describe('Given a request to eval SSM parameters', () => {
-    it('Should throw ValueUndefined when the param root env var is undefined', async () => {
+  describe('Given a request to fetch parameters', () => {
+    it('Should throw when the param root env var is undefined', async () => {
       delete process.env.ENV_PARAM_ROOT;
 
-      await expect(() => service.evalParameters()).rejects.toThrow(
-        ValueUndefined.make('ENV_PARAM_ROOT'),
+      await expect(() => service.fetchParameters()).rejects.toThrow(
+        Error('Value Undefined | ENV_PARAM_ROOT'),
       );
     });
 
-    it('Should resolve when parameters are returned by path', async () => {
+    it('Should map the last path segment to its value', async () => {
+      const name = faker.string.alpha(10);
+      const value = faker.string.alpha();
+
+      ssmService.getParametersByPath.mockResolvedValueOnce(
+        new Mock<GetParametersByPathCommandOutput>()
+          .setup(mock => mock.Parameters)
+          .returns([{Name: `/foo/bar/${name}`, Value: value}])
+          .object(),
+      );
+
+      const result = await service.fetchParameters();
+
+      expect(result).toEqual({[name]: value});
+    });
+
+    it('Should return an empty record when Name and Value are both undefined', async () => {
+      ssmService.getParametersByPath.mockResolvedValueOnce(
+        new Mock<GetParametersByPathCommandOutput>()
+          .setup(mock => mock.Parameters)
+          .returns([{Name: undefined, Value: undefined}])
+          .object(),
+      );
+
+      const result = await service.fetchParameters();
+
+      expect(result).toEqual({});
+    });
+
+    it('Should return an empty record when Parameters is undefined', async () => {
+      ssmService.getParametersByPath.mockResolvedValueOnce(
+        new Mock<GetParametersByPathCommandOutput>()
+          .setup(mock => mock.Parameters)
+          .returns(undefined)
+          .object(),
+      );
+
+      const result = await service.fetchParameters();
+
+      expect(result).toEqual({});
+    });
+
+    it('Should return an empty record when Parameters is an empty array', async () => {
+      ssmService.getParametersByPath.mockResolvedValueOnce(
+        new Mock<GetParametersByPathCommandOutput>()
+          .setup(mock => mock.Parameters)
+          .returns([])
+          .object(),
+      );
+
+      const result = await service.fetchParameters();
+
+      expect(result).toEqual({});
+    });
+
+    it('Should pass the resolved path to getParametersByPath', async () => {
       ssmService.getParametersByPath.mockResolvedValueOnce(
         new Mock<GetParametersByPathCommandOutput>()
           .setup(mock => mock.Parameters)
@@ -67,144 +102,80 @@ describe('Given an init service', () => {
           .object(),
       );
 
-      const result = await service.evalParameters();
+      await service.fetchParameters();
 
-      expect(result).toBeUndefined();
+      expect(ssmService.getParametersByPath).toHaveBeenCalledWith(
+        expect.objectContaining({Path: 'ENV_PARAM_ROOT_VALUE'}),
+      );
     });
 
-    it('Should resolve when Name and Value are both undefined', async () => {
+    it('Should pass WithDecryption true to getParametersByPath', async () => {
       ssmService.getParametersByPath.mockResolvedValueOnce(
         new Mock<GetParametersByPathCommandOutput>()
           .setup(mock => mock.Parameters)
           .returns([
             {
-              Name: undefined,
-              Value: undefined,
+              Name: `/foo/bar/${faker.string.alpha()}`,
+              Value: faker.string.alpha(),
             },
           ])
           .object(),
       );
 
-      const result = await service.evalParameters();
-
-      expect(result).toBeUndefined();
-    });
-
-    it('Should throw PathUndefined when Parameters is undefined', async () => {
-      ssmService.getParametersByPath.mockResolvedValueOnce(
-        new Mock<GetParametersByPathCommandOutput>()
-          .setup(mock => mock.Parameters)
-          .returns(undefined)
-          .object(),
-      );
-
-      await expect(() => service.evalParameters()).rejects.toThrow(
-        PathUndefined.make('ENV_PARAM_ROOT'),
-      );
-    });
-
-    it('Should throw PathUndefined when Parameters is an empty array', async () => {
-      ssmService.getParametersByPath.mockResolvedValueOnce(
-        new Mock<GetParametersByPathCommandOutput>()
-          .setup(mock => mock.Parameters)
-          .returns([])
-          .object(),
-      );
-
-      await expect(() => service.evalParameters()).rejects.toThrow(
-        PathUndefined.make('ENV_PARAM_ROOT'),
-      );
-    });
-
-    it('Should pass the correct path to getParametersByPath', async () => {
-      const paramName = faker.string.alpha();
-
-      ssmService.getParametersByPath.mockResolvedValueOnce(
-        new Mock<GetParametersByPathCommandOutput>()
-          .setup(mock => mock.Parameters)
-          .returns([
-            {Name: `/foo/bar/${paramName}`, Value: faker.string.alpha()},
-          ])
-          .object(),
-      );
-
-      await service.evalParameters();
-
-      expect(ssmService.getParametersByPath).toHaveBeenCalledWith(
-        expect.objectContaining({Path: 'ENV_PARAM_ROOT'}),
-      );
-    });
-
-    it('Should pass WithDecryption true to getParametersByPath', async () => {
-      const paramName = faker.string.alpha();
-
-      ssmService.getParametersByPath.mockResolvedValueOnce(
-        new Mock<GetParametersByPathCommandOutput>()
-          .setup(mock => mock.Parameters)
-          .returns([
-            {Name: `/foo/bar/${paramName}`, Value: faker.string.alpha()},
-          ])
-          .object(),
-      );
-
-      await service.evalParameters();
+      await service.fetchParameters();
 
       expect(ssmService.getParametersByPath).toHaveBeenCalledWith(
         expect.objectContaining({WithDecryption: true}),
       );
     });
 
-    it('Should set process.env with the last path segment as key', async () => {
-      const paramName = `multi_${faker.string.alpha(10)}`;
-      const paramValue = faker.string.alpha();
+    it('Should keep the leaf name raw, without sanitizing', async () => {
+      const value = faker.string.alpha();
 
       ssmService.getParametersByPath.mockResolvedValueOnce(
         new Mock<GetParametersByPathCommandOutput>()
           .setup(mock => mock.Parameters)
-          .returns([{Name: `/foo/bar/${paramName}`, Value: paramValue}])
+          .returns([{Name: '/foo/bar/dotted.leaf.name', Value: value}])
           .object(),
       );
 
-      await service.evalParameters();
+      const result = await service.fetchParameters();
 
-      expect(process.env[paramName]).toBe(paramValue);
+      expect(result['dotted.leaf.name']).toBe(value);
     });
 
-    it('Should not set process.env when Name is present but Value is undefined', async () => {
-      const paramName = faker.string.alpha();
-
-      delete process.env[paramName];
+    it('Should keep the value raw, without escaping', async () => {
+      const name = faker.string.alpha(10);
+      const value = "line1\nwith'quote\\and-backslash";
 
       ssmService.getParametersByPath.mockResolvedValueOnce(
         new Mock<GetParametersByPathCommandOutput>()
           .setup(mock => mock.Parameters)
-          .returns([{Name: `/foo/bar/${paramName}`, Value: undefined}])
+          .returns([{Name: `/foo/bar/${name}`, Value: value}])
           .object(),
       );
 
-      await service.evalParameters();
+      const result = await service.fetchParameters();
 
-      expect(process.env[paramName]).toBeUndefined();
+      expect(result[name]).toBe(value);
     });
 
-    it('Should resolve to undefined when Value is present but Name is undefined', async () => {
+    it('Should not map a parameter whose Value is undefined', async () => {
+      const name = faker.string.alpha(10);
+
       ssmService.getParametersByPath.mockResolvedValueOnce(
         new Mock<GetParametersByPathCommandOutput>()
           .setup(mock => mock.Parameters)
-          .returns([{Name: undefined, Value: faker.string.alpha()}])
+          .returns([{Name: `/foo/bar/${name}`, Value: undefined}])
           .object(),
       );
 
-      const result = await service.evalParameters();
+      const result = await service.fetchParameters();
 
-      expect(result).toBeUndefined();
+      expect(result).toEqual({});
     });
 
-    it('Should not set process.env when Value is present but Name is undefined', async () => {
-      const probeKey = 'Stryker was here';
-
-      delete process.env[probeKey];
-
+    it('Should not map a parameter whose Name is undefined', async () => {
       ssmService.getParametersByPath.mockResolvedValueOnce(
         new Mock<GetParametersByPathCommandOutput>()
           .setup(mock => mock.Parameters)
@@ -212,17 +183,16 @@ describe('Given an init service', () => {
           .object(),
       );
 
-      await service.evalParameters();
+      const result = await service.fetchParameters();
 
-      expect(process.env[probeKey]).toBeUndefined();
+      expect(result).toEqual({});
     });
 
-    it('Should set process.env for parameters from every page when paginating', async () => {
+    it('Should map parameters from every page when paginating', async () => {
       const firstName = `page1_${faker.string.alpha(10)}`;
       const firstValue = faker.string.alpha();
       const secondName = `page2_${faker.string.alpha(10)}`;
       const secondValue = faker.string.alpha();
-      const nextToken = faker.string.alpha(16);
 
       ssmService.getParametersByPath
         .mockResolvedValueOnce(
@@ -230,7 +200,7 @@ describe('Given an init service', () => {
             .setup(mock => mock.Parameters)
             .returns([{Name: `/foo/bar/${firstName}`, Value: firstValue}])
             .setup(mock => mock.NextToken)
-            .returns(nextToken)
+            .returns(faker.string.alpha(16))
             .object(),
         )
         .mockResolvedValueOnce(
@@ -242,9 +212,9 @@ describe('Given an init service', () => {
             .object(),
         );
 
-      await service.evalParameters();
+      const result = await service.fetchParameters();
 
-      expect(process.env).toMatchObject({
+      expect(result).toEqual({
         [firstName]: firstValue,
         [secondName]: secondValue,
       });
@@ -279,12 +249,12 @@ describe('Given an init service', () => {
             .object(),
         );
 
-      await service.evalParameters();
+      await service.fetchParameters();
 
       expect(ssmService.getParametersByPath).toHaveBeenCalledTimes(2);
     });
 
-    it('Should forward NextToken to the subsequent getParametersByPath request', async () => {
+    it('Should forward NextToken to the subsequent request', async () => {
       const nextToken = faker.string.alpha(16);
 
       ssmService.getParametersByPath
@@ -315,7 +285,7 @@ describe('Given an init service', () => {
             .object(),
         );
 
-      await service.evalParameters();
+      await service.fetchParameters();
 
       expect(ssmService.getParametersByPath).toHaveBeenNthCalledWith(
         2,
@@ -323,7 +293,7 @@ describe('Given an init service', () => {
       );
     });
 
-    it('Should not pass a NextToken on the first getParametersByPath request', async () => {
+    it('Should not pass a NextToken on the first request', async () => {
       ssmService.getParametersByPath.mockResolvedValueOnce(
         new Mock<GetParametersByPathCommandOutput>()
           .setup(mock => mock.Parameters)
@@ -338,7 +308,7 @@ describe('Given an init service', () => {
           .object(),
       );
 
-      await service.evalParameters();
+      await service.fetchParameters();
 
       expect(ssmService.getParametersByPath).toHaveBeenNthCalledWith(
         1,
@@ -346,7 +316,7 @@ describe('Given an init service', () => {
       );
     });
 
-    it('Should throw PathUndefined when every page yields no parameters', async () => {
+    it('Should return an empty record when every page yields no parameters', async () => {
       ssmService.getParametersByPath
         .mockResolvedValueOnce(
           new Mock<GetParametersByPathCommandOutput>()
@@ -365,9 +335,9 @@ describe('Given an init service', () => {
             .object(),
         );
 
-      await expect(() => service.evalParameters()).rejects.toThrow(
-        PathUndefined.make('ENV_PARAM_ROOT'),
-      );
+      const result = await service.fetchParameters();
+
+      expect(result).toEqual({});
     });
   });
 });

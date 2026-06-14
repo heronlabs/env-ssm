@@ -13,7 +13,10 @@ const aws = {
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
-  reporter: 'list',
+  reporter: [
+    ['list'],
+    ['html', {open: 'never', outputFolder: 'reports/playwright'}],
+  ],
   webServer: [
     {
       command: 'npx tsx __mocks__/lambda-sim/server.ts',

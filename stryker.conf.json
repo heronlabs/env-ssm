@@ -6,9 +6,6 @@
   "dashboard": {
     "project": "@heronlabs/env-ssm"
   },
-  "htmlReporter": {
-    "fileName": "reports/mutation/mutation.html"
-  },
   "ignorePatterns": [
     "bin",
     "coverage",
@@ -28,7 +25,7 @@
   ],
   "packageManager": "pnpm",
   "plugins": ["@stryker-mutator/vitest-runner"],
-  "reporters": ["html", "json", "clear-text", "progress"],
+  "reporters": ["clear-text", "progress"],
   "testRunner": "vitest",
   "thresholds": {
     "break": 100,
@@ -37,7 +34,7 @@
   },
   "timeoutMS": 15000,
   "vitest": {
-    "configFile": "vitest.config.ts"
+    "configFile": "vitest.stryker.config.ts"
   },
   "warnings": {
     "preprocessorErrors": true,

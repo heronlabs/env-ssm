@@ -26,6 +26,15 @@ export default defineConfig([
       },
     },
   },
+  {
+    files: ['qa-automator/**/*.ts'],
+    languageOptions: {
+      parserOptions: {
+        project: './qa-automator/tsconfig.json',
+        tsconfigRootDir: __dirname,
+      },
+    },
+  },
   ...jsonc.configs['flat/recommended-with-json'],
   {
     files: ['**/*.json'],
@@ -52,6 +61,8 @@ export default defineConfig([
       'bin/',
       'coverage/',
       'reports/',
+      'test-results/',
+      'playwright-report/',
       '**/.stryker-tmp/**',
       '**/reports/mutation/**',
       'pnpm-lock.yaml',

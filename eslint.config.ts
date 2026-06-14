@@ -26,6 +26,19 @@ export default defineConfig([
       },
     },
   },
+  {
+    files: ['examples/**/*.js'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: {
+        require: 'readonly',
+        module: 'readonly',
+        process: 'readonly',
+        console: 'readonly',
+        __dirname: 'readonly',
+      },
+    },
+  },
   ...jsonc.configs['flat/recommended-with-json'],
   {
     files: ['**/*.json'],

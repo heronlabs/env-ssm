@@ -119,3 +119,56 @@ jobs:
           path: reports/mutation/
           retention-days: 14
           if-no-files-found: warn
+
+  integration:
+    needs: setup
+    name: 'Integration (LocalStack)'
+    runs-on: ubuntu-latest
+    services:
+      localstack:
+        image: localstack/localstack:4
+        env:
+          SERVICES: ssm
+        ports:
+          - 4566:4566
+        options: >-
+          --health-cmd "curl -s http://localhost:4566/_localstack/health"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      AWS_ENDPOINT_URL: http://localhost:4566
+      AWS_REGION: us-east-1
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_ENV_PATH: /env-ssm-it/
+      SINGLE_SECRET: arn:aws:ssm:us-east-1:000000000000:parameter/env-ssm-it/single-secret
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.node-version'
+
+      - id: cache-modules
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - id: cache-build
+        uses: actions/cache/restore@v4
+        with:
+          path: bin
+          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json', 'nest-cli.json') }}
+
+      - if: steps.cache-modules.outputs.cache-hit != 'true'
+        run: pnpm install --frozen-lockfile
+
+      - if: steps.cache-build.outputs.cache-hit != 'true'
+        run: pnpm build
+
+      - run: pnpm test:integration

@@ -15,6 +15,11 @@ tests/.coverage
 *.lcov
 .nyc_output
 
+# Integration tests (Playwright)
+test-results
+playwright-report
+.playwright
+
 # Vite (Vitest uses Vite; cache and timestamp files)
 # https://vitejs.dev/guide/dep-pre-bundling.html
 .vite/

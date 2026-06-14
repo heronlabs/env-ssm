@@ -27,15 +27,11 @@ export default defineConfig([
     },
   },
   {
-    files: ['examples/**/*.js'],
+    files: ['examples/**/*.ts'],
     languageOptions: {
-      sourceType: 'commonjs',
-      globals: {
-        require: 'readonly',
-        module: 'readonly',
-        process: 'readonly',
-        console: 'readonly',
-        __dirname: 'readonly',
+      parserOptions: {
+        project: './examples/tsconfig.json',
+        tsconfigRootDir: __dirname,
       },
     },
   },
@@ -65,6 +61,8 @@ export default defineConfig([
       'bin/',
       'coverage/',
       'reports/',
+      'test-results/',
+      'playwright-report/',
       '**/.stryker-tmp/**',
       '**/reports/mutation/**',
       'pnpm-lock.yaml',

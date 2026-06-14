@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "types": ["node"]
+  },
+  "extends": "../tsconfig.json",
+  "include": [
+    "apps",
+    "tests",
+    "global-setup.ts",
+    "seed.ts",
+    "fixtures.ts",
+    "playwright.config.ts"
+  ]
+}

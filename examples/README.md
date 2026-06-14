@@ -20,7 +20,7 @@ does not call the library itself; its Playwright `webServer` command runs the
 real CLI bin and `eval`s the exported shell vars before starting the server:
 
 ```sh
-sh -c 'eval "$(node ../bin/src/cli.js)" && exec npx tsx apps/npx-eval/server.ts'
+bash -c 'eval "$(node ../bin/src/cli.js)" && exec npx tsx apps/npx-eval/server.ts'
 ```
 
 Servers run via `tsx`; ports are `4011` / `4012` / `4013` (see `fixtures.ts`).

@@ -7,11 +7,10 @@
   },
   "extends": "../tsconfig.json",
   "include": [
-    "apps",
+    "__mocks__",
     "tests",
     "global-setup.ts",
     "seed.ts",
-    "fixtures.ts",
     "playwright.config.ts"
   ]
 }

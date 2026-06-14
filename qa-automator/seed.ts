@@ -1,8 +1,12 @@
 import {SSM} from '@aws-sdk/client-ssm';
 
-import {SEEDS} from './fixtures.js';
+import {
+  SEEDS_API_KEY,
+  SEEDS_DATABASE_URL,
+  SEEDS_SINGLE_SECRET,
+} from './__mocks__/fixtures';
 
-export async function seedParameters() {
+async function seedParameters() {
   const ssm = new SSM({
     endpoint: process.env.AWS_ENDPOINT_URL ?? 'http://127.0.0.1:4566',
     region: process.env.AWS_REGION ?? 'us-east-1',
@@ -12,7 +16,7 @@ export async function seedParameters() {
     },
   });
 
-  for (const seed of SEEDS) {
+  for (const seed of [SEEDS_DATABASE_URL, SEEDS_API_KEY, SEEDS_SINGLE_SECRET]) {
     await ssm.putParameter({
       Name: seed.name,
       Value: seed.value,
@@ -22,6 +26,6 @@ export async function seedParameters() {
   }
 }
 
-export default async function globalSetup() {
+void (async () => {
   await seedParameters();
-}
+})();

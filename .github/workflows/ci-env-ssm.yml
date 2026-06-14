@@ -36,7 +36,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: bin
-          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json', 'nest-cli.json') }}
+          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
 
       - if: steps.cache-modules.outputs.cache-hit != 'true'
         run: pnpm install --frozen-lockfile
@@ -56,6 +56,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version-file: '.node-version'
+          cache: 'pnpm'
 
       - uses: actions/cache/restore@v4
         with:
@@ -65,26 +66,25 @@ jobs:
       - uses: actions/cache/restore@v4
         with:
           path: bin
-          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json', 'nest-cli.json') }}
+          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
 
       - run: pnpm dep:cruise
 
       - run: pnpm audit --prod --audit-level=high
 
-  lint-test:
-    needs: setup
-    name: 'Lint & Test'
+  lint:
+    needs: audit
+    name: 'Lint'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
 
       - uses: pnpm/action-setup@v5
 
       - uses: actions/setup-node@v6
         with:
           node-version-file: '.node-version'
+          cache: 'pnpm'
 
       - uses: actions/cache/restore@v4
         with:
@@ -94,9 +94,33 @@ jobs:
       - uses: actions/cache/restore@v4
         with:
           path: bin
-          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json', 'nest-cli.json') }}
+          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
 
       - run: pnpm lint:check
+
+  unit:
+    needs: lint
+    name: 'Unit Tests'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.node-version'
+          cache: 'pnpm'
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: bin
+          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
 
       - run: pnpm test:unit
 
@@ -109,7 +133,51 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
 
-      - run: pnpm test:mutation
+  mutation:
+    needs: unit
+    name: 'Mutation Tests'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.node-version'
+          cache: 'pnpm'
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: bin
+          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
+
+      - name: Mutation tests
+        run: |
+          set -o pipefail
+          pnpm test:mutation 2>&1 | tee /tmp/mutation.log
+
+      - if: always()
+        name: Mutation summary
+        run: |
+          score=$(awk -F'|' '/^All files/ {gsub(/ /, "", $2); print $2; exit}' /tmp/mutation.log 2>/dev/null)
+          {
+            echo "### Mutation testing"
+            echo '```'
+            if [ -n "$score" ]; then
+              echo "Mutation score: ${score}%"
+            else
+              echo "see uploaded mutation-reports artifact"
+            fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - if: always()
         name: Upload mutation reports
@@ -121,29 +189,15 @@ jobs:
           if-no-files-found: warn
 
   integration:
-    needs: setup
+    needs: unit
     name: 'Integration (LocalStack)'
     runs-on: ubuntu-latest
-    services:
-      localstack:
-        image: localstack/localstack:4
-        env:
-          SERVICES: ssm
-        ports:
-          - 4566:4566
-        options: >-
-          --health-cmd "curl -s http://localhost:4566/_localstack/health"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
     env:
       AWS_ENDPOINT_URL: http://localhost:4566
       AWS_REGION: us-east-1
       AWS_DEFAULT_REGION: us-east-1
       AWS_ACCESS_KEY_ID: test
       AWS_SECRET_ACCESS_KEY: test
-      AWS_ENV_PATH: /env-ssm-it/
-      SINGLE_SECRET: arn:aws:ssm:us-east-1:000000000000:parameter/env-ssm-it/single-secret
     steps:
       - uses: actions/checkout@v6
 
@@ -152,6 +206,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version-file: '.node-version'
+          cache: 'pnpm'
 
       - id: cache-modules
         uses: actions/cache/restore@v4
@@ -163,7 +218,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: bin
-          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json', 'nest-cli.json') }}
+          key: build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'src/**/*.ts', 'tsconfig*.json') }}
 
       - if: steps.cache-modules.outputs.cache-hit != 'true'
         run: pnpm install --frozen-lockfile
@@ -171,4 +226,11 @@ jobs:
       - if: steps.cache-build.outputs.cache-hit != 'true'
         run: pnpm build
 
+      - name: Start LocalStack
+        run: docker compose up -d --wait
+
       - run: pnpm test:integration
+
+      - if: always()
+        name: Stop LocalStack
+        run: docker compose down

@@ -27,10 +27,10 @@ export default defineConfig([
     },
   },
   {
-    files: ['examples/**/*.ts'],
+    files: ['qa-automator/**/*.ts'],
     languageOptions: {
       parserOptions: {
-        project: './examples/tsconfig.json',
+        project: './qa-automator/tsconfig.json',
         tsconfigRootDir: __dirname,
       },
     },

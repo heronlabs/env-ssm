@@ -90,10 +90,26 @@ works once LocalStack is up on `localhost:4566`.
 The tests use only Playwright's `request` fixture, so no browser binaries are
 needed (`playwright install` is not required).
 
+The run writes an HTML report to `qa-automator/reports/playwright/`; open it with
+`npx playwright show-report qa-automator/reports/playwright`.
+
 ## CI
 
-The `[ CI ] | Env SSM` workflow runs this automatically in an `integration` job
-that brings up LocalStack with `docker compose up -d --wait` (same
-`docker-compose.yml` used locally) and exports the AWS contract at job level — no
-manual setup. It runs in parallel with the mutation-test job, both gated on the
-unit-test job.
+The `[ CI ] | Env SSM` workflow runs a sequential chain — **Install & Build →
+Audit → Lint → Unit Tests** — then fans out to two parallel leaves gated on the
+unit job: **Integration (LocalStack)** and **Mutation Tests**. Every job pins
+pnpm with `cache: 'pnpm'` and restores the shared `node_modules` / `bin` caches.
+
+**Integration** brings up LocalStack with `docker compose up -d --wait` (same
+`docker-compose.yml` used locally), exports the AWS contract at job level, runs
+`pnpm test:integration`, and tears LocalStack down. Playwright's `list` reporter
+streams every test to the job log; its `html` reporter writes
+`qa-automator/reports/playwright/`, uploaded as the **`playwright-report`**
+artifact. A step-summary block shows the pass/fail line.
+
+**Mutation** runs `pnpm test:mutation` and scrapes the clear-text `All files`
+row to post **only** the score to the step summary (`Mutation score: 100.00%`);
+the full Stryker output stays in the job log and `reports/mutation/` uploads as
+the **`mutation-reports`** artifact. Stryker runs against
+`vitest.stryker.config.ts` (base config + `reporters: ['default']`) so vitest's
+CI `github-actions` reporter does not fire once per mutant and bury the score.

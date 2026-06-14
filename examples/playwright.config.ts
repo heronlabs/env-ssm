@@ -25,7 +25,7 @@ export default defineConfig({
     },
     {
       command:
-        'sh -c \'eval "$(node ../bin/src/cli.js)" && exec npx tsx apps/npx-eval/server.ts\'',
+        'bash -c \'eval "$(node ../bin/src/cli.js)" && exec npx tsx apps/npx-eval/server.ts\'',
       url: `http://127.0.0.1:${PORTS.npxEval}/config`,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,

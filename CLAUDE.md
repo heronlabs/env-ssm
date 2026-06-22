@@ -13,18 +13,19 @@ Standalone, framework-free library (`@heronlabs/env-ssm`, published to npmjs). L
 
 ```
 src/
-├── cli.ts                             # npx entry: BashService.eval() → stdout for `eval`
+├── cli.ts                             # npx entry: --format=bash|dotenv → stdout for `eval`/`source`
 ├── core/
 │   └── services/
 │       ├── config-service.ts          # getOrThrow(): resolve one value (literal or ARN)
 │       └── init/
 │           ├── parameter-service.ts   # fetchParameters(): SSM path → { leaf: value }, shared fetch
 │           ├── env-service.ts         # eval(): writes fetched params raw → process.env
-│           └── bash-service.ts        # eval(): fetched params → escaped `export NAME=$'value'` lines
+│           ├── bash-service.ts        # eval(): fetched params → escaped `export NAME=$'value'` lines
+│           └── dotenv-service.ts      # eval(): fetched params → byte-exact `NAME='value'` lines
 └── main.ts                            # SsmInitFactory + SsmConfigFactory + service classes
 ```
 
-`ParameterService` is the shared SSM fetch; `EnvService` and `BashService` are injected with one and consume it — same parameters, two sinks (raw into `process.env`, escaped to stdout). No inheritance.
+`ParameterService` is the shared SSM fetch; `EnvService`, `BashService`, and `DotenvService` are injected with one and consume it — same parameters, three sinks (raw into `process.env`, ANSI-C-escaped `export` lines to stdout, byte-exact single-quoted `.env` lines to stdout). No inheritance.
 
 ## API
 
@@ -32,10 +33,12 @@ src/
 await SsmInitFactory.env('AWS_ENV_PATH').eval();
 ```
 
-- `SsmInitFactory.env(paramRoot)` / `.bash(paramRoot)` — construct an `EnvService` / `BashService`, each wired to a fresh `ParameterService` (`new SSM(...)` client + `paramRoot`); synchronous
+- `SsmInitFactory.env(paramRoot)` / `.bash(paramRoot)` / `.dotenv(paramRoot)` — construct an `EnvService` / `BashService` / `DotenvService`, each wired to a fresh `ParameterService` (`new SSM(...)` client + `paramRoot`); synchronous
 - `ParameterService.fetchParameters()` — reads `process.env[paramRoot]` as the SSM path, fetches every parameter one level under it (`WithDecryption: true`, paginated) and returns `{ leaf: value }`. Throws `Value Undefined | <paramRoot>` if the root env var is unset; returns `{}` (no throw) when the path has zero parameters
 - `EnvService.eval()` — `fetchParameters()` then writes each leaf to `process.env` **raw** (no escaping, no name rewriting); returns `void`
 - `BashService.eval()` — `fetchParameters()` then returns `export NAME=$'value'` lines (values escaped for bash ANSI-C quoting, names sanitized to valid shell identifiers) for the `cli.ts` / `eval` path; does not touch `process.env`. Throws `Name Collision | <a>, <b> -> <identifier>` when two names sanitize to the same identifier (rejects the silent overwrite). Sanitize + escape are bash-only — the `env` path writes raw, since bash decodes the escaping back to the original value anyway
+- `DotenvService.eval()` — `fetchParameters()` then returns `NAME='value'` lines (no `export` prefix) for the `cli.ts` `--format=dotenv` path; does not touch `process.env`. Same name sanitize + same `Name Collision` throw as `BashService`. Value escaping is single-quote-only: each `'` → `'\''` (close-quote, escaped-quote, reopen-quote); backslashes and newlines are left **literal** — inside bash single quotes both are verbatim, so the emitted `.env` is byte-exact and `source`-able. This single-quote escaping is the deliberate difference from `BashService`'s ANSI-C `$'…'` escaping
+- `cli.ts` reads `--format=<value>` from `process.argv` (default `bash`): `dotenv` → `SsmInitFactory.dotenv(...)`, `bash` → `SsmInitFactory.bash(...)`, any other explicit value throws `Unknown Format | <value>`
 - `ConfigService.getOrThrow(key)` — reads `process.env[key]` and resolves a single value (literal or SSM ARN); throws `Value Undefined | <key>` if the key is unset or the ARN resolves to no value. Construct one with `SsmConfigFactory.make()`
 
 ## Verify

@@ -2,10 +2,17 @@ import {SSM} from '@aws-sdk/client-ssm';
 
 import {ConfigService} from './core/services/config-service';
 import {BashService} from './core/services/init/bash-service';
+import {DotenvService} from './core/services/init/dotenv-service';
 import {EnvService} from './core/services/init/env-service';
 import {ParameterService} from './core/services/init/parameter-service';
 
-export {BashService, ConfigService, EnvService, ParameterService};
+export {
+  BashService,
+  ConfigService,
+  DotenvService,
+  EnvService,
+  ParameterService,
+};
 
 export class SsmInitFactory {
   static env(paramRoot: string): EnvService {
@@ -16,6 +23,12 @@ export class SsmInitFactory {
 
   static bash(paramRoot: string): BashService {
     return new BashService(
+      new ParameterService(new SSM({apiVersion: '2014-11-06'}), paramRoot),
+    );
+  }
+
+  static dotenv(paramRoot: string): DotenvService {
+    return new DotenvService(
       new ParameterService(new SSM({apiVersion: '2014-11-06'}), paramRoot),
     );
   }

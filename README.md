@@ -26,6 +26,7 @@ needs them.
 | A Node process (Lambda, NestJS app) | `SsmInitFactory.env(paramRoot)` → `eval()` | Loads every parameter under a path into `process.env` |
 | A single value to resolve (literal or ARN) | `SsmConfigFactory.make()` → `getOrThrow(key)` | Returns one resolved value on demand |
 | A shell entry point with Node available | `eval "$(npx @heronlabs/env-ssm)"` | Exports every parameter into the current shell |
+| A `.env` file to source or commit to a runtime | `npx @heronlabs/env-ssm --format=dotenv` | Prints byte-exact `NAME='value'` lines to source or write to `.env` |
 
 These are **independent entry points — pick the one that matches where your
 variables need to land, not a sequence.** Each does its own SSM fetch; the CLI
@@ -191,6 +192,38 @@ node index.js
 - Requires Node on the host (that's what runs `npx`). Skip the `eval` and the
   exports print but never reach your process.
 
+#### `--format=dotenv` — emit a byte-exact `.env`
+
+Pass `--format=dotenv` to print dotenv-style `NAME='value'` lines instead of bash
+`export` statements. Each value is wrapped in **single quotes**, with the one byte
+that can break out of a single-quoted string — the single quote itself — escaped as
+`'\''`. Backslashes and newlines are left **literal**: inside bash single quotes both
+are taken verbatim, so `source`-ing the file reproduces the original bytes exactly.
+
+```bash
+# Source the lines directly into the current shell
+source <(npx @heronlabs/env-ssm --format=dotenv)
+
+# …or write a .env file for a runtime that reads one
+npx @heronlabs/env-ssm --format=dotenv > .env
+```
+
+It differs from the default `bash` format (`--format=bash`, the implicit default)
+only in **escaping**, never in the value delivered:
+
+- `bash` emits `export NAME=$'value'` with ANSI-C (`$'…'`) quoting — backslash,
+  single quote, and newline are escaped (`\\`, `\'`, `\n`) and bash **decodes** them
+  back on `eval`.
+- `dotenv` emits `NAME='value'` with single-quote quoting — only the single quote is
+  escaped (`'\''`), backslash and newline stay literal. The file is byte-exact: the
+  text between the quotes *is* the value, so it's safe to `source` or commit as `.env`.
+
+Both formats sanitize names to valid shell identifiers and reject a name collision
+identically (see [Errors](#errors)). `--format=dotenv` still requires bash to
+`source` (the `'\''` idiom is POSIX single-quote escaping).
+
+An unrecognised value throws `Unknown Format | <value>`.
+
 > **Trust the path.** Anyone who can write to your SSM path controls the env var
 > names and values you `eval` (or load) — a parameter named `PATH` or `LD_PRELOAD`
 > would be exported ahead of your app. This is inherent to loading an environment
@@ -203,30 +236,34 @@ Every failure throws a plain `Error` — there are no custom error classes:
 - `Value Undefined | <name>` — the param-root env var is unset (the `env` / `bash`
   init path), or the key is unset / the resolved ARN points to a parameter with no
   value (`getOrThrow`).
-- `Name Collision | <a>, <b> -> <identifier>` — only the CLI (`bash`) path: two
-  parameter names sanitize to the same shell identifier, so exporting both would
-  silently drop one. Rename one of the parameters.
+- `Name Collision | <a>, <b> -> <identifier>` — the CLI path (`bash` and `dotenv`
+  formats alike): two parameter names sanitize to the same shell identifier, so
+  emitting both would silently drop one. Rename one of the parameters.
+- `Unknown Format | <value>` — the CLI was passed a `--format=` value other than
+  `bash` or `dotenv`.
 
 A path that returns zero parameters is **not** an error — the `env` path loads
-nothing and the `bash` path prints nothing.
+nothing and the `bash` / `dotenv` paths print nothing.
 
 ## How it works
 
 ```
 src/
-├── cli.ts                              # npx entry: BashService.eval() → stdout for `eval`
+├── cli.ts                              # npx entry: --format=bash|dotenv → stdout for `eval`/`source`
 ├── core/
 │   └── services/
 │       ├── config-service.ts           # getOrThrow(): resolve one value (literal or ARN)
 │       └── init/
 │           ├── parameter-service.ts    # fetchParameters(): SSM path → { leaf: value }
 │           ├── env-service.ts          # eval(): writes fetched params raw → process.env
-│           └── bash-service.ts         # eval(): fetched params → escaped `export` lines
+│           ├── bash-service.ts         # eval(): fetched params → escaped `export` lines
+│           └── dotenv-service.ts       # eval(): fetched params → byte-exact `NAME='value'` lines
 └── main.ts                             # SsmInitFactory + SsmConfigFactory + service classes
 ```
 
-`ParameterService` is the shared SSM fetch; `EnvService` and `BashService` each
-consume one — same parameters, two sinks (raw into `process.env`, escaped to stdout).
+`ParameterService` is the shared SSM fetch; `EnvService`, `BashService`, and
+`DotenvService` each consume one — same parameters, three sinks (raw into
+`process.env`, ANSI-C-escaped `export` lines, byte-exact single-quoted `.env` lines).
 
 ## Develop
 

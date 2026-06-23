@@ -16,7 +16,7 @@ name: 'Skill | pr-watch'
 
 on:
   workflow_run:
-    workflows: ['Continuous Integration']
+    workflows: ['Continuous Integration'] # must match continuous-integration.yml `name:`
     types: [completed]
 
 permissions:

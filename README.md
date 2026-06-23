@@ -277,7 +277,7 @@ pnpm test:integration # Playwright + LocalStack — see qa-automator/README.md
 pnpm dep:cruise       # architecture rules
 ```
 
-The CI pipeline (`[ CI ] | Env SSM`) mirrors these: a sequential
+The CI pipeline (`Continuous Integration`) mirrors these: a sequential
 build → audit → lint → unit chain, then mutation and integration as parallel
 leaves. Each posts a trimmed report to the run's step summary (mutation score;
 Playwright pass/fail) and uploads `mutation-reports` / `playwright-report`
@@ -288,7 +288,7 @@ integration harness.
 
 Publishing is automated by a single manual workflow:
 
-1. Run the **`[ CD ] | Tags`** workflow (`workflow_dispatch`) with a semver `spec` (`major` / `minor` / `patch`). The `setup-tags` job bumps `package.json`, tags, and creates a GitHub release; the `publish-npm` job then checks out the new tag, builds, and publishes `@heronlabs/env-ssm` to npmjs with `npm publish --access public --provenance`.
+1. Run the **`Continuous Deployment`** workflow (`workflow_dispatch`) with a semver `spec` (`major` / `minor` / `patch`). The `setup-tags` job bumps `package.json`, tags, and creates a GitHub release; the `publish-npm` job then checks out the new tag, builds, and publishes `@heronlabs/env-ssm` to npmjs with `npm publish --access public --provenance`.
 
 Requires the `NPM_TOKEN` repository secret (an npmjs automation token with publish rights on the `@heronlabs` scope) and the `PAT` secret used by the tag workflow.
 

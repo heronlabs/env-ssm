@@ -95,7 +95,7 @@ The run writes an HTML report to `qa-automator/reports/playwright/`; open it wit
 
 ## CI
 
-The `[ CI ] | Env SSM` workflow runs a sequential chain — **Install & Build →
+The `Continuous Integration` workflow runs a sequential chain — **Install & Build →
 Audit → Lint → Unit Tests** — then fans out to two parallel leaves gated on the
 unit job: **Integration (LocalStack)** and **Mutation Tests**. Every job pins
 pnpm with `cache: 'pnpm'` and restores the shared `node_modules` / `bin` caches.

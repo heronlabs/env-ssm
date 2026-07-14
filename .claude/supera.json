@@ -1,8 +1,12 @@
 {
-  "baseBranch": "main",
-  "buildCommand": "pnpm build",
-  "lintCommand": "pnpm lint:check",
-  "mergeMethod": "squash",
-  "remote": "origin",
-  "testCommands": {"unit": "pnpm test:unit"}
+  "audits": {"security": true},
+  "pr": {"base": "main", "remote": "origin"},
+  "stack": "pnpm",
+  "verify": {
+    "build": "pnpm build",
+    "install": "pnpm install --frozen-lockfile",
+    "lint": "pnpm lint:check",
+    "test": "pnpm test:unit"
+  },
+  "worktree": {"base": "main", "dir": ".worktrees"}
 }

@@ -273,7 +273,7 @@ pnpm build            # tsc -> bin/
 pnpm lint:check
 pnpm test:unit        # 100% coverage enforced
 pnpm test:mutation    # 100% mutation score enforced
-pnpm test:integration # Playwright + LocalStack — see playwright/README.md
+pnpm test:integration # Playwright + LocalStack — see qa-automator/README.md
 pnpm dep:cruise       # architecture rules
 ```
 
@@ -281,7 +281,7 @@ The CI pipeline (`Continuous Integration`) mirrors these: a sequential
 build → audit → lint → unit chain, then mutation and integration as parallel
 leaves. Each posts a trimmed report to the run's step summary (mutation score;
 Playwright pass/fail) and uploads `mutation-reports` / `playwright-report`
-artifacts. See [`playwright/README.md`](./playwright/README.md) for the
+artifacts. See [`qa-automator/README.md`](./qa-automator/README.md) for the
 integration harness.
 
 ## Release

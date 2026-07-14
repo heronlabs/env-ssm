@@ -63,7 +63,7 @@
     "lint:check": "gts lint && eslint \"**/*.json\" \"**/*.yml\" \"**/*.yaml\" --no-error-on-unmatched-pattern",
     "lint:fix": "gts fix && eslint \"**/*.json\" \"**/*.yml\" \"**/*.yaml\" --fix --no-error-on-unmatched-pattern",
     "prepublishOnly": "pnpm build",
-    "test:integration": "tsx playwright/seed.ts && playwright test -c playwright/playwright.config.ts",
+    "test:integration": "tsx qa-automator/seed.ts && playwright test -c qa-automator/playwright.config.ts",
     "test:mutation": "stryker run stryker.conf.json",
     "test:unit": "vitest run"
   },

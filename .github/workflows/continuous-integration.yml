@@ -15,7 +15,7 @@ concurrency:
 jobs:
   setup:
     name: 'Install & Build'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
@@ -47,7 +47,7 @@ jobs:
   audit:
     needs: setup
     name: 'Audit & Supply Chain'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
@@ -75,7 +75,7 @@ jobs:
   lint:
     needs: audit
     name: 'Lint'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
@@ -101,7 +101,7 @@ jobs:
   unit:
     needs: lint
     name: 'Unit Tests'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
@@ -136,7 +136,7 @@ jobs:
   mutation:
     needs: unit
     name: 'Mutation Tests'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
@@ -191,7 +191,7 @@ jobs:
   integration:
     needs: unit
     name: 'Integration (LocalStack)'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     env:
       AWS_ENDPOINT_URL: http://localhost:4566
       AWS_REGION: us-east-1
@@ -249,7 +249,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report
-          path: playwright/reports/playwright/
+          path: qa-automator/reports/playwright/
           retention-days: 14
           if-no-files-found: warn
 

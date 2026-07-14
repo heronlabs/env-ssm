@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-
-import {CliFactory} from './main';
+import {SsmInitFactory} from './main';
 
 void (async () => {
   const formatFlag = process.argv.find(arg => arg.startsWith('--format='));
@@ -8,14 +7,14 @@ void (async () => {
 
   if (format === 'dotenv') {
     process.stdout.write(
-      `${await CliFactory.make().getDotEnvCommand().executeOrThrow('AWS_ENV_PATH')}\n`,
+      `${await SsmInitFactory.dotenv('AWS_ENV_PATH').eval()}\n`,
     );
     return;
   }
 
   if (format === 'bash') {
     process.stdout.write(
-      `${await CliFactory.make().getBashEnvCommand().executeOrThrow('AWS_ENV_PATH')}\n`,
+      `${await SsmInitFactory.bash('AWS_ENV_PATH').eval()}\n`,
     );
     return;
   }

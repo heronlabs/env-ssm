@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "types": ["node"]
+  },
+  "extends": "../tsconfig.json",
+  "include": ["__mocks__", "specs", "seed.ts", "playwright.config.ts"]
+}

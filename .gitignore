@@ -74,6 +74,8 @@ lib-cov
 
 # Claude
 .superpowers
+.supera/
+.serena/
 .worktrees/
 
 # Stryker Mutation

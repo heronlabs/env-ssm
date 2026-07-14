@@ -1,41 +1,23 @@
-import {SSM} from '@aws-sdk/client-ssm';
-
-import {ConfigService} from './core/services/config-service';
-import {BashService} from './core/services/init/bash-service';
-import {DotenvService} from './core/services/init/dotenv-service';
-import {EnvService} from './core/services/init/env-service';
-import {ParameterService} from './core/services/init/parameter-service';
+import {CliFactory} from './application/cli/cli-factory';
+import {BashEnvCommand} from './application/cli/commands/bash-env-command';
+import {DotEnvCommand} from './application/cli/commands/dot-env-command';
+import {ProcessEnvCommand} from './application/cli/commands/process-env-command';
+import {CoreFactory} from './core/core-factory';
+import {BashEnvService} from './core/services/eval/bash-env-service';
+import {DotEnvService} from './core/services/eval/dot-env-service';
+import {ProcessEnvService} from './core/services/process-env-service';
+import {AwsFactory} from './infrastructure/aws/aws-factory';
+import {ConfigService} from './infrastructure/aws/services/config-service';
 
 export {
-  BashService,
+  AwsFactory,
+  BashEnvCommand,
+  BashEnvService,
+  CliFactory,
   ConfigService,
-  DotenvService,
-  EnvService,
-  ParameterService,
+  CoreFactory,
+  DotEnvCommand,
+  DotEnvService,
+  ProcessEnvCommand,
+  ProcessEnvService,
 };
-
-export class SsmInitFactory {
-  static env(paramRoot: string): EnvService {
-    return new EnvService(
-      new ParameterService(new SSM({apiVersion: '2014-11-06'}), paramRoot),
-    );
-  }
-
-  static bash(paramRoot: string): BashService {
-    return new BashService(
-      new ParameterService(new SSM({apiVersion: '2014-11-06'}), paramRoot),
-    );
-  }
-
-  static dotenv(paramRoot: string): DotenvService {
-    return new DotenvService(
-      new ParameterService(new SSM({apiVersion: '2014-11-06'}), paramRoot),
-    );
-  }
-}
-
-export class SsmConfigFactory {
-  static make(): ConfigService {
-    return new ConfigService(new SSM({apiVersion: '2014-11-06'}));
-  }
-}

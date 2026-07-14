@@ -6,22 +6,14 @@
   "dashboard": {
     "project": "@heronlabs/env-ssm"
   },
-  "ignorePatterns": [
-    "bin",
-    "coverage",
-    "node_modules",
-    "reports",
-    "tests/.coverage"
-  ],
+  "ignorePatterns": ["bin", "node_modules", "reports"],
   "incremental": true,
   "incrementalFile": "reports/mutation/incremental.json",
   "mutate": [
     "src/**/*.ts",
     "!src/main.ts",
     "!src/cli.ts",
-    "!src/**/*.d.ts",
-    "!src/**/*factory.ts",
-    "!src/**/*-module.ts"
+    "!src/**/*factory.ts"
   ],
   "packageManager": "pnpm",
   "plugins": ["@stryker-mutator/vitest-runner"],

@@ -6,17 +6,20 @@ const server = createServer((req, res) => {
   if (req.method === 'GET' && req.url === '/config') {
     void (async () => {
       try {
-        const value = await AwsFactory.make()
+        const singleSecret = await AwsFactory.make()
           .getConfigService()
           .getOrThrow('SINGLE_SECRET');
 
         res.writeHead(200, {'content-type': 'application/json'});
-        res.end(JSON.stringify({value}));
+
+        res.end(JSON.stringify({singleSecret}));
       } catch (error) {
         res.writeHead(500, {'content-type': 'application/json'});
+
         res.end(JSON.stringify({error: (error as Error).message}));
       }
     })();
+
     return;
   }
 

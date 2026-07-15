@@ -1,9 +1,7 @@
 import {createServer} from 'node:http';
 
-import {CliFactory} from '../../bin/src/main';
-
 async function main() {
-  await CliFactory.make().getProcessEnvCommand().executeOrThrow('AWS_ENV_PATH');
+  require('dotenv').config({path: '__mocks__/.env'});
 
   const server = createServer((req, res) => {
     if (req.method === 'GET' && req.url === '/config') {

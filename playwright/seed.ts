@@ -2,8 +2,8 @@ import {SSM} from '@aws-sdk/client-ssm';
 
 import {
   SEEDS_API_KEY,
+  SEEDS_CONFIG_SINGLE_SECRET,
   SEEDS_DATABASE_URL,
-  SEEDS_SINGLE_SECRET,
 } from './__mocks__/fixtures';
 
 async function seedParameters() {
@@ -16,7 +16,11 @@ async function seedParameters() {
     },
   });
 
-  for (const seed of [SEEDS_DATABASE_URL, SEEDS_API_KEY, SEEDS_SINGLE_SECRET]) {
+  for (const seed of [
+    SEEDS_DATABASE_URL,
+    SEEDS_API_KEY,
+    SEEDS_CONFIG_SINGLE_SECRET,
+  ]) {
     await ssm.putParameter({
       Name: seed.name,
       Value: seed.value,

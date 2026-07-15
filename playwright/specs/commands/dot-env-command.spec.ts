@@ -6,9 +6,11 @@ import {
   SEEDS_DATABASE_URL,
 } from '../../__mocks__/fixtures';
 
-test('Should hydrate process.env from the SSM path', async ({request}) => {
+test('Should hydrate process.env from the SSM path using .env file with dotenv lib', async ({
+  request,
+}) => {
   const res = await request.get(
-    `http://127.0.0.1:${PORTS.processEnvServer}/config`,
+    `http://127.0.0.1:${PORTS.dotEnvServer}/config`,
   );
   expect(res.status()).toBe(200);
   expect(await res.json()).toEqual({

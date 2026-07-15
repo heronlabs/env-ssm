@@ -1,14 +1,11 @@
 import {defineConfig} from '@playwright/test';
 
-import {AWS_ENV_PATH, PORTS, SINGLE_SECRET_ARN} from './__mocks__/fixtures';
-
-const aws = {
-  AWS_ENDPOINT_URL: process.env.AWS_ENDPOINT_URL ?? 'http://127.0.0.1:4566',
-  AWS_REGION: process.env.AWS_REGION ?? 'us-east-1',
-  AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION ?? 'us-east-1',
-  AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID ?? 'test',
-  AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY ?? 'test',
-};
+import {
+  AWS,
+  AWS_ENV_PATH,
+  CONFIG_SINGLE_SECRET_ARN,
+  PORTS,
+} from './__mocks__/fixtures';
 
 export default defineConfig({
   testDir: './specs',
@@ -20,37 +17,49 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'npx tsx __mocks__/server-process-env.ts',
-      url: `http://127.0.0.1:${PORTS.lambdaServer}/config`,
+      command:
+        "bash -c 'rm -rf __mocks__/.env && node ../bin/src/cli.js --format=dotenv > __mocks__/.env && exec npx tsx __mocks__/server-dot-env.ts'",
+      url: `http://127.0.0.1:${PORTS.dotEnvServer}/config`,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
       env: {
-        ...aws,
-        PORT: String(PORTS.lambdaServer),
+        ...AWS(),
+        PORT: String(PORTS.dotEnvServer),
+        AWS_ENV_PATH,
+      },
+    },
+    {
+      command: 'npx tsx __mocks__/server-process-env.ts',
+      url: `http://127.0.0.1:${PORTS.processEnvServer}/config`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+      env: {
+        ...AWS(),
+        PORT: String(PORTS.processEnvServer),
         AWS_ENV_PATH,
       },
     },
     {
       command:
         'bash -c \'eval "$(node ../bin/src/cli.js)" && exec npx tsx __mocks__/server-bash-env.ts\'',
-      url: `http://127.0.0.1:${PORTS.npxEvalServer}/config`,
+      url: `http://127.0.0.1:${PORTS.bashServer}/config`,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
       env: {
-        ...aws,
-        PORT: String(PORTS.npxEvalServer),
+        ...AWS(),
+        PORT: String(PORTS.bashServer),
         AWS_ENV_PATH,
       },
     },
     {
       command: 'npx tsx __mocks__/server-config-service.ts',
-      url: `http://127.0.0.1:${PORTS.configParamStoreServer}/config`,
+      url: `http://127.0.0.1:${PORTS.configServer}/config`,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
       env: {
-        ...aws,
-        PORT: String(PORTS.configParamStoreServer),
-        SINGLE_SECRET: SINGLE_SECRET_ARN,
+        ...AWS(),
+        PORT: String(PORTS.configServer),
+        SINGLE_SECRET: CONFIG_SINGLE_SECRET_ARN,
       },
     },
   ],

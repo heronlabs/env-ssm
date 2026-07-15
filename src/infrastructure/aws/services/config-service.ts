@@ -1,7 +1,7 @@
 import {SSM} from '@aws-sdk/client-ssm';
 
 export class ConfigService {
-  async get(key: string) {
+  private async get(key: string) {
     try {
       const value = process.env[key];
 

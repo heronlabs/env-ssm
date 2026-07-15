@@ -1,11 +1,9 @@
 import {Mock} from 'moq.ts';
-import {Mock as ViMock, vi} from 'vitest';
+import {vi} from 'vitest';
 
 import {ParameterService} from '../../../../src/infrastructure/aws/services/parameter-service';
 
-export const ParameterServiceMock: {
-  fetchAllParameters: ViMock;
-} = {
+export const ParameterServiceMock = {
   fetchAllParameters: vi.fn(),
 };
 

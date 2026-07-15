@@ -345,4 +345,18 @@ describe('Given a parameter service', () => {
 
     expect(result).toStrictEqual({ok: true, data: {}});
   });
+
+  it('Should throw error from getParametersByPath', async () => {
+    const error = new Error(faker.lorem.sentence());
+    SsmMock.getParametersByPath.mockImplementationOnce(() => {
+      throw error;
+    });
+
+    const result = await service.fetchAllParameters('ENV_PARAM_ROOT');
+
+    expect(result).toStrictEqual({
+      ok: false,
+      error,
+    });
+  });
 });

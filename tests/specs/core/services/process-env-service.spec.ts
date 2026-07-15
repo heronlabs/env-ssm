@@ -1,14 +1,14 @@
 import {faker} from '@faker-js/faker';
 
-import {ProcessEnvService} from '../../../../../src/core/services/process-env-service';
+import {ProcessEnvService} from '../../../../src/core/services/process-env-service';
 import {
   ParameterServiceMock,
   ParameterServiceMoq,
-} from '../../../../__mocks__/infrastructure/aws/parameter-service-mock';
+} from '../../../__mocks__/infrastructure/aws/parameter-service-mock';
 import {
   cleanEnv,
   snapshotEnv,
-} from '../../../../__mocks__/node-process-env-helper';
+} from '../../../__mocks__/node-process-env-helper';
 
 describe('Given an env service', () => {
   let service: ProcessEnvService;
@@ -87,5 +87,32 @@ describe('Given an env service', () => {
     const result = await service.load(pathEnvVar);
 
     expect(result).toStrictEqual({ok: true});
+  });
+
+  it('Should return error on fetching all parameters', async () => {
+    const error = new Error(faker.lorem.sentence());
+
+    ParameterServiceMock.fetchAllParameters.mockReturnValueOnce({
+      ok: false as const,
+      error,
+    });
+
+    const pathEnvVar = 'AWS_ENV_PATH';
+    const result = await service.load(pathEnvVar);
+
+    expect(result).toStrictEqual({ok: false, error});
+  });
+
+  it('Should return throw error from fetching all parameters', async () => {
+    const error = new Error(faker.lorem.sentence());
+
+    ParameterServiceMock.fetchAllParameters.mockImplementationOnce(() => {
+      throw error;
+    });
+
+    const pathEnvVar = 'AWS_ENV_PATH';
+    const result = await service.load(pathEnvVar);
+
+    expect(result).toStrictEqual({ok: false, error});
   });
 });

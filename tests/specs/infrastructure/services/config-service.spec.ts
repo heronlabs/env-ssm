@@ -15,7 +15,6 @@ describe('Given a config service', () => {
 
   beforeEach(() => {
     snapshotEnv();
-
     service = new ConfigService(SsmMoq);
   });
 
@@ -212,5 +211,19 @@ describe('Given a config service', () => {
     const result = await service.getOrThrow(key);
 
     expect(result).toBe(rawValue);
+  });
+
+  it('Should throw error from getParameter', async () => {
+    const error = new Error(faker.lorem.sentence());
+    SsmMock.getParameter.mockImplementationOnce(() => {
+      throw error;
+    });
+
+    const key = faker.string.alpha(8);
+    const value = 'arn:aws:ssm:us-east-1:123456789012:parameter/redis-url';
+
+    setEnv(key, value);
+
+    await expect(() => service.getOrThrow(key)).rejects.toThrow(error);
   });
 });

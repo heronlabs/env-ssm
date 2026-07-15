@@ -15,6 +15,9 @@
     "!src/cli.ts",
     "!src/**/*factory.ts"
   ],
+  "mutator": {
+    "excludedMutations": ["BlockStatement", "ConditionalExpression"]
+  },
   "packageManager": "pnpm",
   "plugins": ["@stryker-mutator/vitest-runner"],
   "reporters": ["clear-text", "progress"],

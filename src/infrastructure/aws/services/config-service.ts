@@ -5,7 +5,7 @@ export class ConfigService {
     try {
       const value = process.env[key];
 
-      if (value === undefined) {
+      if (!value) {
         return {
           ok: false as const,
           error: new Error(`Value Undefined | ${key}`),
@@ -23,7 +23,7 @@ export class ConfigService {
         WithDecryption: true,
       });
 
-      return {ok: true as const, data: result?.Parameter?.Value};
+      return {ok: true as const, data: result.Parameter?.Value};
     } catch (error) {
       return {
         ok: false as const,

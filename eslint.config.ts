@@ -65,7 +65,7 @@ export default defineConfig([
       '.supera/',
       '.worktrees/',
       '.stryker-tmp/**',
-      'test-results',
+      '**/test-results/',
     ],
   },
 ]);

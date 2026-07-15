@@ -10,13 +10,81 @@
       }
     },
     {
+      "comment": "Infrastructure must not depend on application or core layers.",
+      "from": {
+        "path": "^src/infrastructure/"
+      },
+      "name": "no-infra-to-app-or-core",
+      "severity": "error",
+      "to": {
+        "path": "^src/(application|core)/"
+      }
+    },
+    {
+      "comment": "Application layer orchestrates core; must not reach directly into infrastructure.",
+      "from": {
+        "path": "^src/application/"
+      },
+      "name": "no-app-to-infra",
+      "severity": "error",
+      "to": {
+        "path": "^src/infrastructure/"
+      }
+    },
+    {
+      "comment": "Core layer must not depend on application layer.",
+      "from": {
+        "path": "^src/core/"
+      },
+      "name": "no-core-to-app",
+      "severity": "error",
+      "to": {
+        "path": "^src/application/"
+      }
+    },
+    {
+      "comment": "Everything in src must be reachable from the entry points (dead-code guard).",
+      "from": {
+        "path": "(^|/)src/(main|cli)\\.ts$"
+      },
+      "name": "no-unreachable-from-entry",
+      "severity": "error",
+      "to": {
+        "path": "^src",
+        "pathNot": "(^|/)src/(main|cli)\\.ts$",
+        "reachable": false
+      }
+    },
+    {
+      "comment": "Production code must not import devDependencies.",
+      "from": {
+        "path": "^src"
+      },
+      "name": "not-to-dev-dep",
+      "severity": "error",
+      "to": {
+        "dependencyTypes": ["npm-dev"]
+      }
+    },
+    {
+      "comment": "Every import must resolve to a package.json dependency.",
+      "from": {
+        "path": "^src"
+      },
+      "name": "no-non-package-json",
+      "severity": "error",
+      "to": {
+        "dependencyTypes": ["npm-no-pkg", "npm-unknown"]
+      }
+    },
+    {
       "comment": "Orphan modules are dead-code candidates (allow the public entry main.ts and type decls).",
       "from": {
         "orphan": true,
         "pathNot": ["\\.d\\.ts$", "(^|/)main\\.ts$"]
       },
       "name": "no-orphans",
-      "severity": "warn",
+      "severity": "error",
       "to": {}
     }
   ],

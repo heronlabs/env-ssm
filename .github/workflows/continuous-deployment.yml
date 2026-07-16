@@ -32,9 +32,9 @@ jobs:
 
       - uses: heronlabs/action-tag-release-build@v6
         with:
-            gh_token: ${{ github.token }}
-            semantic: ${{ inputs.semantic }}
-            bump_npm: true
+          gh_token: ${{ github.token }}
+          semantic: ${{ inputs.semantic }}
+          bump_npm: true
       - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v7

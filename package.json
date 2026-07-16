@@ -44,7 +44,7 @@
   "license": "MIT",
   "main": "./bin/src/main.js",
   "name": "@heronlabs/env-ssm",
-  "packageManager": "pnpm@11.13.0",
+  "packageManager": "pnpm@11.13.1",
   "prettier": "gts/.prettierrc.json",
   "publishConfig": {
     "access": "public"

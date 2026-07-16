@@ -2,11 +2,10 @@ name: 'Continuous Deployment'
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
     inputs:
-      spec:
+      semantic:
         description: The SEMVER specification.
         required: true
         type: choice
@@ -17,35 +16,31 @@ on:
           - 'patch'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  setup-tags:
-    name: 'Create release tag'
+  release:
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write
     outputs:
       tag: ${{ steps.version.outputs.tag }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          token: ${{ secrets.PAT }}
 
       - uses: heronlabs/action-tag-release-build@v6
         id: version
         with:
-          github-token: ${{ secrets.PAT }}
-          spec: ${{ inputs.spec || 'patch' }}
-
+            gh_token: ${{ github.token }}
+            semantic: ${{ inputs.semantic }}
+            bump_npm: true
   publish-npm:
     name: 'Publish to npm'
-    needs: setup-tags
+    needs: release
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -53,7 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ needs.setup-tags.outputs.tag }}
+          ref: ${{ needs.release.outputs.tag }}
 
       - uses: pnpm/action-setup@v6
 

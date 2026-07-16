@@ -5,11 +5,11 @@ we keep the bar high: 100% test coverage and 100% mutation score are enforced.
 
 ## Development setup
 
-Requires Node.js `>=22` and pnpm `>=10` (see `engines` in `package.json`).
+Requires Node.js `>=22` and pnpm `>=10.29.3` (see `engines` in `package.json`).
 
 ```bash
 pnpm install          # install dependencies
-pnpm build            # nest build -> bin/
+pnpm build            # tsc -p tsconfig.bin.json -> bin/
 ```
 
 ## Verifying your change
@@ -22,6 +22,18 @@ pnpm test:unit        # unit tests — 100% coverage required
 pnpm test:mutation    # mutation tests — 100% mutation score required
 pnpm lint:check       # gts lint + JSON/YAML lint
 pnpm dep:cruise       # dependency-cruiser architecture rules
+```
+
+`pnpm dep:cruise` enforces the layering: `application → core → infrastructure`,
+one direction only — see the Architecture section of the README.
+
+Integration tests (Playwright against LocalStack) also run in CI; to run them
+locally, start LocalStack first:
+
+```bash
+docker compose up -d
+pnpm build            # the harness runs the built bin/ output
+pnpm test:integration
 ```
 
 A change is not ready until all of the above pass.

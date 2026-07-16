@@ -27,10 +27,10 @@ export default defineConfig([
     },
   },
   {
-    files: ['qa-automator/**/*.ts'],
+    files: ['playwright/**/*.ts'],
     languageOptions: {
       parserOptions: {
-        project: './qa-automator/tsconfig.json',
+        project: './playwright/tsconfig.json',
         tsconfigRootDir: __dirname,
       },
     },
@@ -59,13 +59,13 @@ export default defineConfig([
     ignores: [
       'node_modules/',
       'bin/',
-      'coverage/',
       'reports/',
-      'test-results/',
-      'playwright-report/',
-      '**/.stryker-tmp/**',
-      '**/reports/mutation/**',
       'pnpm-lock.yaml',
+      '.serena/',
+      '.supera/',
+      '.worktrees/',
+      '.stryker-tmp/**',
+      '**/test-results/',
     ],
   },
 ]);

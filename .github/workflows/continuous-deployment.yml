@@ -26,7 +26,7 @@ concurrency:
 jobs:
   setup-tags:
     name: 'Create release tag'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     outputs:
@@ -46,7 +46,7 @@ jobs:
   publish-npm:
     name: 'Publish to npm'
     needs: setup-tags
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       id-token: write

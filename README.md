@@ -410,3 +410,4 @@ MIT © Heron Labs
 [ci-url]: https://github.com/heronlabs/env-ssm/actions/workflows/continuous-integration.yml
 [license-badge]: https://img.shields.io/npm/l/@heronlabs/env-ssm.svg
 [license-url]: ./LICENSE
+

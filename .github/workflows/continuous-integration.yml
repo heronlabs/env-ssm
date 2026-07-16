@@ -190,7 +190,7 @@ jobs:
 
   integration:
     needs: unit
-    name: 'Integration (LocalStack)'
+    name: 'Integration tests'
     runs-on: ubuntu-24.04
     env:
       AWS_ENDPOINT_URL: http://localhost:4566
@@ -249,7 +249,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report
-          path: playwright/reports/playwright/
+          path: reports/playwright/
           retention-days: 14
           if-no-files-found: warn
 

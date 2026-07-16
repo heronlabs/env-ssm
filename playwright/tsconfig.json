@@ -6,5 +6,5 @@
     "types": ["node"]
   },
   "extends": "../tsconfig.json",
-  "include": ["__mocks__", "specs", "seed.ts", "playwright.config.ts"]
+  "include": ["__mocks__", "specs", "*.ts"]
 }

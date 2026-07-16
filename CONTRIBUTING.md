@@ -5,7 +5,7 @@ we keep the bar high: 100% test coverage and 100% mutation score are enforced.
 
 ## Development setup
 
-Requires Node.js `>=22` and pnpm `>=10` (see `engines` in `package.json`).
+Requires Node.js `>=22` and pnpm `>=10.29.3` (see `engines` in `package.json`).
 
 ```bash
 pnpm install          # install dependencies

@@ -14,7 +14,7 @@ export class CoreFactory {
     return new DotEnvService(this.awsFactory.getParameterService());
   }
 
-  constructor(public readonly awsFactory: AwsFactory) {}
+  constructor(private readonly awsFactory: AwsFactory) {}
 
   static make(): CoreFactory {
     const awsFactory = AwsFactory.make();

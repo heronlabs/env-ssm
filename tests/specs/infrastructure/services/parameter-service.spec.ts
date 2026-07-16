@@ -23,7 +23,7 @@ describe('Given a parameter service', () => {
     cleanEnv();
   });
 
-  it('Should throw when the param root env var is undefined', async () => {
+  it('Should return error when the param root env var is undefined', async () => {
     delete process.env.ENV_PARAM_ROOT;
 
     const result = await service.fetchAllParameters('ENV_PARAM_ROOT');
@@ -176,6 +176,21 @@ describe('Given a parameter service', () => {
     const result = await service.fetchAllParameters('ENV_PARAM_ROOT');
 
     expect(result).toStrictEqual({ok: true, data: {}});
+  });
+
+  it('Should map a parameter whose Value is an empty string', async () => {
+    const name = faker.string.alpha(10);
+
+    SsmMock.getParametersByPath.mockResolvedValueOnce(
+      new Mock<GetParametersByPathCommandOutput>()
+        .setup(mock => mock.Parameters)
+        .returns([{Name: `/foo/bar/${name}`, Value: ''}])
+        .object(),
+    );
+
+    const result = await service.fetchAllParameters('ENV_PARAM_ROOT');
+
+    expect(result).toStrictEqual({ok: true, data: {[name]: ''}});
   });
 
   it('Should not map a parameter whose Name is undefined', async () => {

@@ -2,7 +2,7 @@
 
 import {CliFactory} from './main';
 
-void (async () => {
+(async () => {
   const formatFlag = process.argv.find(arg => arg.startsWith('--format='));
   const format = formatFlag ? formatFlag.slice('--format='.length) : 'bash';
 
@@ -21,4 +21,7 @@ void (async () => {
   }
 
   throw new Error(`Unknown Format | ${format}`);
-})();
+})().catch((error: unknown) => {
+  console.error((error as Error).message);
+  process.exit(1);
+});

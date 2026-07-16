@@ -1,5 +1,4 @@
 import {Mock} from 'moq.ts';
-import {vi} from 'vitest';
 
 import {ParameterService} from '../../../../src/infrastructure/aws/services/parameter-service';
 

@@ -1,6 +1,5 @@
 import {SSM} from '@aws-sdk/client-ssm';
 import {Mock} from 'moq.ts';
-import {vi} from 'vitest';
 
 export const SsmMock = {
   getParameter: vi.fn(),

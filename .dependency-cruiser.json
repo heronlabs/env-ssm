@@ -78,10 +78,10 @@
       }
     },
     {
-      "comment": "Orphan modules are dead-code candidates (allow the public entry main.ts and type decls).",
+      "comment": "Orphan modules are dead-code candidates (allow the public entries main.ts, cli.ts and type decls).",
       "from": {
         "orphan": true,
-        "pathNot": ["\\.d\\.ts$", "(^|/)main\\.ts$"]
+        "pathNot": ["\\.d\\.ts$", "(^|/)main\\.ts$", "(^|/)cli\\.ts$"]
       },
       "name": "no-orphans",
       "severity": "error",

@@ -1,3 +1,5 @@
+// Shared across test files — safe only because vitest runs with pool: 'threads'.
+// A switch to singleThread or forks would cause cross-file state corruption.
 let envSnapshot: NodeJS.ProcessEnv = {};
 
 export const snapshotEnv = (): void => {

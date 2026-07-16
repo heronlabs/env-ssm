@@ -31,7 +31,7 @@ export class ParameterService {
 
           const parameterName = names.pop();
 
-          if (parameterName && Value) {
+          if (parameterName !== undefined && Value !== undefined) {
             resolved[parameterName] = Value;
           }
         });

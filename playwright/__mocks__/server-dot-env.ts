@@ -1,7 +1,9 @@
 import {createServer} from 'node:http';
 
+import {config} from 'dotenv';
+
 async function main() {
-  require('dotenv').config({path: '__mocks__/.env'});
+  config({path: '__mocks__/.env'});
 
   const server = createServer((req, res) => {
     if (req.method === 'GET' && req.url === '/config') {

@@ -16,11 +16,9 @@ export abstract class LineEnvService implements Eval {
       const lines: string[] = [];
 
       for (const [name, value] of Object.entries(data)) {
-        const sanitizedName = name
+        const identifier = name
           .replace(/[^A-Za-z0-9_]/g, '_')
           .replace(/^([0-9])/, '_$1');
-
-        const identifier = sanitizedName;
 
         const collision = seen.get(identifier);
 

@@ -376,11 +376,13 @@ then Playwright boots four tiny HTTP servers — one per delivery path
 `ConfigService`) — against the built `bin/` output and asserts each serves the
 seeded values.
 
-The CI pipeline (`Continuous Integration`) mirrors these: a sequential
-Install & Build → Audit & Supply Chain → Lint → Unit Tests chain, then Mutation
-Tests and Integration tests (LocalStack) as parallel leaves. Each posts a trimmed
-report to the run's step summary (mutation score; Playwright pass/fail) and
-uploads `unit-test-coverage` / `mutation-reports` / `playwright-report`
+The CI pipeline (`Continuous Integration`) mirrors these: an `install` (build)
+job first, then audit, lint, and unit tests run in parallel. Mutation tests and
+integration tests (LocalStack) run in parallel after unit. Each job runs
+`pnpm install --frozen-lockfile` directly — no `actions/cache` steps;
+`setup-node`'s built-in `cache: 'pnpm'` handles the pnpm store. Each job posts a
+trimmed report to the run's step summary (mutation score; Playwright pass/fail)
+and uploads `unit-test-coverage` / `mutation-reports` / `playwright-report`
 artifacts.
 
 ## Release

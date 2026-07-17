@@ -1,0 +1,32 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "automerge": false,
+  "extends": ["config:recommended"],
+  "labels": ["dependencies"],
+  "npm": {
+    "rangeStrategy": "pin"
+  },
+  "packageRules": [
+    {
+      "description": "Ignore eslint, typescript, and related dev deps",
+      "enabled": false,
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["eslint", "typescript", "typescript-eslint", "gts"],
+      "matchPackagePrefixes": ["@eslint/"]
+    },
+    {
+      "description": "Group all npm dependencies with 3-day minimum release age",
+      "groupName": "npm dependencies",
+      "matchManagers": ["npm"],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "Group all GitHub Actions updates",
+      "groupName": "GitHub Actions",
+      "matchManagers": ["github-actions"]
+    }
+  ],
+  "prConcurrentLimit": 10,
+  "prHourlyLimit": 5,
+  "schedule": ["after 10am and before 6pm on weekdays"]
+}

@@ -11,9 +11,6 @@ updates:
     directory: '/'
     schedule:
       interval: daily
-    groups:
-      npm:
-        patterns: ['*']
     ignore:
       - dependency-name: eslint
         versions: ['*']

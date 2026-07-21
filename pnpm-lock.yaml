@@ -14,7 +14,7 @@ importers:
     dependencies:
       '@aws-sdk/client-ssm':
         specifier: ^3.1045.0
-        version: 3.1090.0
+        version: 3.1091.0
     devDependencies:
       '@faker-js/faker':
         specifier: ^10.5.0
@@ -79,8 +79,8 @@ importers:
 
 packages:
 
-  '@aws-sdk/client-ssm@3.1090.0':
-    resolution: {integrity: sha512-8nYV/qnr+lr+xcsLBzx4iFWsl1zIT8Uf9uS2xevpfuFM0BT6IIIisAuxrotr7Rng3YgqDRx78JZKNp87iR+7uA==}
+  '@aws-sdk/client-ssm@3.1091.0':
+    resolution: {integrity: sha512-aqDOBa+gA4nH77Gh18gHQzo7ZGEX5cY9y7YHTQ/rXukqC/+BJ2uIfjbQVbxKGhrfNYlLgdc/cDsvrYM/t83jaQ==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/core@3.975.3':
@@ -2547,7 +2547,7 @@ packages:
 
 snapshots:
 
-  '@aws-sdk/client-ssm@3.1090.0':
+  '@aws-sdk/client-ssm@3.1091.0':
     dependencies:
       '@aws-sdk/core': 3.975.3
       '@aws-sdk/credential-provider-node': 3.972.70

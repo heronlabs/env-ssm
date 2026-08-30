@@ -13,6 +13,13 @@ import {CliFactory} from './main';
     return;
   }
 
+  if (format === 'docker') {
+    process.stdout.write(
+      `${await CliFactory.make().getDockerEnvCommand().executeOrThrow('AWS_ENV_PATH')}\n`,
+    );
+    return;
+  }
+
   if (format === 'bash') {
     process.stdout.write(
       `${await CliFactory.make().getBashEnvCommand().executeOrThrow('AWS_ENV_PATH')}\n`,

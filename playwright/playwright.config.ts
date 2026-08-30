@@ -29,6 +29,18 @@ export default defineConfig({
       },
     },
     {
+      command:
+        "bash -c 'rm -rf __mocks__/.env.docker && node ../bin/src/cli.js --format=docker > __mocks__/.env.docker && exec npx tsx __mocks__/server-docker-env.ts'",
+      url: `http://127.0.0.1:${PORTS.dockerEnvServer}/config`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+      env: {
+        ...AWS(),
+        PORT: String(PORTS.dockerEnvServer),
+        AWS_ENV_PATH,
+      },
+    },
+    {
       command: 'npx tsx __mocks__/server-process-env.ts',
       url: `http://127.0.0.1:${PORTS.processEnvServer}/config`,
       reuseExistingServer: !process.env.CI,

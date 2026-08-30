@@ -403,10 +403,14 @@ pnpm dep:cruise       # architecture rules
 ```
 
 Integration tests live in `playwright/`: `seed.ts` populates a LocalStack SSM,
-then Playwright boots four tiny HTTP servers — one per delivery path
-(`process.env`, `eval`'d bash exports, a generated `.env`, single-value
-`ConfigService`) — against the built `bin/` output and asserts each serves the
-seeded values.
+then Playwright boots five tiny HTTP servers — one per delivery path
+(`process.env`, `eval`'d bash exports, a generated `.env`, a generated docker
+env-file, single-value `ConfigService`) — against the built `bin/` output and
+asserts each serves the seeded values. The docker path uses docker's real
+env-file parser, not a simulation: the CLI writes the env file on the host,
+then the mock server runs in a minimal node container started with
+`docker run --env-file`, so the values are injected at run time and the server
+just reads `process.env`.
 
 The CI pipeline (`Continuous Integration`) mirrors these: an `install` (build)
 job first, then audit, lint, and unit tests run in parallel. Mutation tests and

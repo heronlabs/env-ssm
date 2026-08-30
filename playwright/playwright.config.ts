@@ -29,14 +29,12 @@ export default defineConfig({
       },
     },
     {
-      command:
-        "bash -c 'rm -rf __mocks__/.env.docker && node ../bin/src/cli.js --format=docker > __mocks__/.env.docker && exec npx tsx __mocks__/server-docker-env.ts'",
+      command: `bash -c 'rm -rf __mocks__/.env.docker && node ../bin/src/cli.js --format=docker > __mocks__/.env.docker && docker build -t env-ssm-it-server-docker-env __mocks__ && exec docker run --rm --init -p ${PORTS.dockerEnvServer}:${PORTS.dockerEnvServer} --env-file __mocks__/.env.docker -e PORT=${PORTS.dockerEnvServer} env-ssm-it-server-docker-env'`,
       url: `http://127.0.0.1:${PORTS.dockerEnvServer}/config`,
       reuseExistingServer: !process.env.CI,
-      timeout: 60_000,
+      timeout: 120_000,
       env: {
         ...AWS(),
-        PORT: String(PORTS.dockerEnvServer),
         AWS_ENV_PATH,
       },
     },

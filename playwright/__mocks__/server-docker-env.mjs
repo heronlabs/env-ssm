@@ -1,27 +1,16 @@
-import {readFileSync} from 'node:fs';
+import console from 'node:console';
 import {createServer} from 'node:http';
+import process from 'node:process';
 
 async function main() {
-  const env = new Map<string, string>();
-
-  for (const line of readFileSync('__mocks__/.env.docker', 'utf8').split(
-    '\n',
-  )) {
-    if (!line || line.startsWith('#')) continue;
-
-    const separator = line.indexOf('=');
-
-    env.set(line.slice(0, separator), line.slice(separator + 1));
-  }
-
   const server = createServer((req, res) => {
     if (req.method === 'GET' && req.url === '/config') {
       res.writeHead(200, {'content-type': 'application/json'});
 
       res.end(
         JSON.stringify({
-          DATABASE_URL: env.get('DATABASE_URL'),
-          API_KEY: env.get('API_KEY'),
+          DATABASE_URL: process.env.DATABASE_URL,
+          API_KEY: process.env.API_KEY,
         }),
       );
 

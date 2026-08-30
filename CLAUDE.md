@@ -70,7 +70,7 @@ pnpm dep:cruise
 pnpm test:integration  # Playwright vs LocalStack — needs `docker compose up -d`
 ```
 
-Integration harness lives in `playwright/`: `seed.ts` seeds LocalStack SSM, then `playwright.config.ts` boots five HTTP mock servers against the built `bin/` — one per delivery path (`process.env`, `eval`'d bash exports, generated `.env`, generated docker env-file, single-value `ConfigService`) — and the specs assert each serves the seeded values.
+Integration harness lives in `playwright/`: `seed.ts` seeds LocalStack SSM, then `playwright.config.ts` boots five HTTP mock servers against the built `bin/` — one per delivery path (`process.env`, `eval`'d bash exports, generated `.env`, generated docker env-file, single-value `ConfigService`) — and the specs assert each serves the seeded values. The docker path exercises docker's real env-file parser: the host-side CLI writes `__mocks__/.env.docker`, then a plain-JS mock server (`server-docker-env.mjs`, built into a minimal node image via `__mocks__/Dockerfile`) runs inside `docker run --rm --init --env-file` — values are injected at run time, not baked into the image, and the server just reads `process.env`. Deliberately `docker run`, never compose `env_file:` — compose's dotenv parser strips quotes, which would defeat exactly what the format guarantees.
 
 ## CI
 

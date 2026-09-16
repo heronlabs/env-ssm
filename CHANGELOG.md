@@ -1,3 +1,10 @@
+## v4.0.13 (2026-09-16)
+
+### Miscellaneous Chores
+
+* other(deps): bump @aws-sdk/client-ssm from 3.1090.0 to 3.1101.0 (#46) (2a63ddaffbda8eb9e7200031016ac304792e42b9)
+* other(deps-dev): bump tsx from 4.23.1 to 4.23.4 (#47) (50e5c979f756655e4a2dc64427318032dff8d33b)
+
 ## v4.0.12 (2026-09-16)
 
 ### Miscellaneous Chores

@@ -1,3 +1,10 @@
+## v4.0.12 (2026-09-16)
+
+### Miscellaneous Chores
+
+* other: Fix casing of gh_token and bump_npm in workflow (e51086652010e5543fd5fae73b277f5ca057b978)
+* other(deps): bump heronlabs/action-tag-release-build (#49) (ee6300e8f4a5fd5b9049a6595b1774ca946cc137)
+
 ## v4.0.11 (2026-07-19)
 
 

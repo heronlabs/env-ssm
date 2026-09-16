@@ -1,3 +1,9 @@
+## v4.1.0 (2026-09-16)
+
+### Features
+
+* feat: add --format=docker raw env-file CLI output (#50) (290d40490f894f243e434bc66a1900692197b82a)
+
 ## v4.0.15 (2026-09-16)
 
 ### Miscellaneous Chores

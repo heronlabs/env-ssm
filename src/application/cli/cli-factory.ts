@@ -1,5 +1,6 @@
 import {CoreFactory} from '../../core/core-factory';
 import {BashEnvCommand} from './commands/bash-env-command';
+import {DockerEnvCommand} from './commands/docker-env-command';
 import {DotEnvCommand} from './commands/dot-env-command';
 import {ProcessEnvCommand} from './commands/process-env-command';
 
@@ -14,6 +15,10 @@ export class CliFactory {
 
   public getDotEnvCommand(): DotEnvCommand {
     return new DotEnvCommand(this.coreFactory.getDotEnvService());
+  }
+
+  public getDockerEnvCommand(): DockerEnvCommand {
+    return new DockerEnvCommand(this.coreFactory.getDockerEnvService());
   }
 
   constructor(private readonly coreFactory: CoreFactory) {}

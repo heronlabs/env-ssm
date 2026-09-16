@@ -1,8 +1,0 @@
-{
-  "baseBranch": "main",
-  "buildCommand": "pnpm build",
-  "lintCommand": "pnpm lint:check",
-  "mergeMethod": "squash",
-  "remote": "origin",
-  "testCommands": {"unit": "pnpm test:unit"}
-}

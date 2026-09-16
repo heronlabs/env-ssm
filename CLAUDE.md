@@ -7,7 +7,7 @@ Standalone, framework-free library (`@heronlabs/env-ssm`, published to npmjs). L
 - `@aws-sdk/client-ssm` — the only runtime dependency; plain classes, no DI container
 - Exported entry: `./bin/src/main.js` (`main:`, `types:`); CLI bin: `./bin/src/cli.js`
 - Built with `tsc -p tsconfig.bin.json`; tests run on vitest's default esbuild transform (no swc)
-- No custom error classes — every failure throws a plain `Error` (`Value Undefined | <name>`, `Name Collision | …`, `Unknown Format | …`)
+- No custom error classes — every failure throws a plain `Error` (`Value Undefined | <name>`, `Name Collision | …`, `Value Multiline | …`, `Unknown Format | …`)
 
 ## Structure
 
@@ -15,11 +15,11 @@ Three layers, one dependency direction — `application → core → infrastruct
 
 ```
 src/
-├── cli.ts                                 # npx entry: --format=bash|dotenv → stdout for `eval`/`source`
+├── cli.ts                                 # npx entry: --format=bash|dotenv|docker → stdout for `eval`/`source`/`--env-file`
 ├── main.ts                                # public exports: factories, commands, services
 ├── application/cli/
 │   ├── cli-factory.ts                     # CliFactory — builds commands wired to core services
-│   └── commands/                          # ProcessEnvCommand | BashEnvCommand | DotEnvCommand
+│   └── commands/                          # ProcessEnvCommand | BashEnvCommand | DotEnvCommand | DockerEnvCommand
 │                                          #   executeOrThrow(pathEnvVar): unwrap result or throw
 ├── core/
 │   ├── core-factory.ts                    # CoreFactory — builds services wired to infrastructure
@@ -27,9 +27,10 @@ src/
 │   └── services/
 │       ├── process-env-service.ts         # load(): fetched params raw → process.env
 │       └── eval/
-│           ├── line-env-service.ts        # abstract base: sanitize names, detect collisions, join lines
+│           ├── line-env-service.ts        # abstract base: validate values, sanitize names, detect collisions, join lines
 │           ├── bash-env-service.ts        # evalLine(): ANSI-C `export NAME=$'value'`
-│           └── dot-env-service.ts         # evalLine(): single-quoted `NAME='value'`, byte-exact
+│           ├── dot-env-service.ts         # evalLine(): single-quoted `NAME='value'`, byte-exact
+│           └── docker-env-service.ts      # evalLine(): raw `NAME=value`, rejects newline values
 └── infrastructure/aws/
     ├── aws-factory.ts                     # AwsFactory — owns the SSM client
     └── services/
@@ -48,13 +49,14 @@ await CliFactory.make().getProcessEnvCommand().executeOrThrow('AWS_ENV_PATH');
 const value = await AwsFactory.make().getConfigService().getOrThrow('KEY');
 ```
 
-- `CliFactory.make()` — `getProcessEnvCommand()` / `getBashEnvCommand()` / `getDotEnvCommand()`; each command's `executeOrThrow(pathEnvVar)` runs the matching core service and throws on `{ok: false}`
+- `CliFactory.make()` — `getProcessEnvCommand()` / `getBashEnvCommand()` / `getDotEnvCommand()` / `getDockerEnvCommand()`; each command's `executeOrThrow(pathEnvVar)` runs the matching core service and throws on `{ok: false}`
 - `ParameterService.fetchAllParameters(pathEnvVar)` — reads `process.env[pathEnvVar]` as the SSM path, fetches every parameter one level under it (`WithDecryption: true`, paginated, **not** recursive) and returns `{ leaf: value }`. `{ok: false, error: 'Value Undefined | <pathEnvVar>'}` if the env var is unset; `{ok: true, data: {}}` (not an error) when the path has zero parameters
 - `ProcessEnvService.load(pathEnvVar)` — fetch then write each leaf to `process.env` **raw** (no escaping, no name rewriting)
 - `BashEnvService.evalAll(pathEnvVar)` — fetch then `export NAME=$'value'` lines (values ANSI-C-escaped: `\\`, `\'`, `\n`; names sanitized to valid shell identifiers) for the CLI `eval` path; does not touch `process.env`. `Name Collision | <a>, <b> -> <identifier>` error when two names sanitize to the same identifier (rejects the silent overwrite). Sanitize + escape are shell-only — the `process.env` path writes raw, since bash decodes the escaping back to the original value anyway
 - `DotEnvService.evalAll(pathEnvVar)` — fetch then `NAME='value'` lines (no `export` prefix) for the CLI `--format=dotenv` path. Same name sanitize + same `Name Collision` error as bash. Value escaping is single-quote-only: each `'` → `'\''`; backslashes and newlines stay **literal** — inside bash single quotes both are verbatim, so the emitted `.env` is byte-exact and `source`-able. This is the deliberate difference from `BashEnvService`'s ANSI-C `$'…'` escaping
-- Both line services extend `LineEnvService` (implements `Eval`), which owns fetch → sanitize → collision check → join; subclasses only define `evalLine(identifier, value)`
-- `cli.ts` reads `--format=<value>` from `process.argv` (default `bash`): `dotenv` → `getDotEnvCommand()`, `bash` → `getBashEnvCommand()`, any other explicit value throws `Unknown Format | <value>`; path env var is hardwired to `AWS_ENV_PATH`
+- `DockerEnvService.evalAll(pathEnvVar)` — fetch then raw `NAME=value` lines (no quoting, no escaping) for the CLI `--format=docker` path, made for `docker run --env-file` / `docker create --env-file`: docker's env-file parser takes everything after the first `=` verbatim (no quote stripping), so the quoted `dotenv` format would put literal quotes into the container. Same name sanitize + same `Name Collision` error as the other formats. Newline-containing values are unrepresentable in the format (no escaping mechanism exists) — `Value Multiline | <name>` error instead of corrupt output
+- The line services extend `LineEnvService` (implements `Eval`), which owns fetch → validate → sanitize → collision check → join; subclasses define `evalLine(identifier, value)` and may declare the optional `validateValue(name, value)` hook (only `DockerEnvService` does)
+- `cli.ts` reads `--format=<value>` from `process.argv` (default `bash`): `dotenv` → `getDotEnvCommand()`, `docker` → `getDockerEnvCommand()`, `bash` → `getBashEnvCommand()`, any other explicit value throws `Unknown Format | <value>`; path env var is hardwired to `AWS_ENV_PATH`
 - `ConfigService.getOrThrow(key)` — reads `process.env[key]`; if it matches `arn:aws:ssm:<region>:<account>:parameter/<name>` fetches + decrypts that parameter, else returns the literal. Throws `Value Undefined | <key>` if the key is unset or the ARN resolves to no value. Construct via `AwsFactory.make().getConfigService()`
 
 ## Verify
@@ -68,7 +70,7 @@ pnpm dep:cruise
 pnpm test:integration  # Playwright vs LocalStack — needs `docker compose up -d`
 ```
 
-Integration harness lives in `playwright/`: `seed.ts` seeds LocalStack SSM, then `playwright.config.ts` boots four HTTP mock servers against the built `bin/` — one per delivery path (`process.env`, `eval`'d bash exports, generated `.env`, single-value `ConfigService`) — and the specs assert each serves the seeded values.
+Integration harness lives in `playwright/`: `seed.ts` seeds LocalStack SSM, then `playwright.config.ts` boots five HTTP mock servers against the built `bin/` — one per delivery path (`process.env`, `eval`'d bash exports, generated `.env`, generated docker env-file, single-value `ConfigService`) — and the specs assert each serves the seeded values. The docker path exercises docker's real env-file parser: the host-side CLI writes `__mocks__/.env.docker`, then a mock server (`server-docker-env.ts`, built into a minimal node image via `__mocks__/Dockerfile`) runs inside `docker run --rm --init --env-file` — values are injected at run time, not baked into the image, and the server just reads `process.env`. The image has no build step: `node:22.20.0-alpine` runs the `.ts` file directly via Node's built-in type stripping (unflagged since 22.18), so the file must stay erasable-syntax-only — no enums, namespaces, parameter properties or `import =`, since Node strips types rather than transpiling them. Deliberately `docker run`, never compose `env_file:` — compose's dotenv parser strips quotes, which would defeat exactly what the format guarantees.
 
 ## CI
 

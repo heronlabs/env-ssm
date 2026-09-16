@@ -3,6 +3,7 @@ export const PORTS = {
   bashServer: 4012,
   configServer: 4013,
   dotEnvServer: 4014,
+  dockerEnvServer: 4015,
 } as const;
 
 export const AWS_ENV_PATH = '/env-ssm-it/';

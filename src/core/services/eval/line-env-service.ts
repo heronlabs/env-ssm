@@ -4,6 +4,8 @@ import {Eval} from '../../interfaces/eval';
 export abstract class LineEnvService implements Eval {
   protected abstract evalLine(identifier: string, value: string): string;
 
+  protected validateValue?(name: string, value: string): Error | undefined;
+
   async evalAll(pathEnvVar: string) {
     try {
       const {ok, data, error} =
@@ -16,6 +18,10 @@ export abstract class LineEnvService implements Eval {
       const lines: string[] = [];
 
       for (const [name, value] of Object.entries(data)) {
+        const invalid = this.validateValue?.(name, value);
+
+        if (invalid) return {ok: false as const, error: invalid};
+
         const identifier = name
           .replace(/[^A-Za-z0-9_]/g, '_')
           .replace(/^([0-9])/, '_$1');

@@ -19,6 +19,7 @@ Standalone — no framework required. The only runtime dependency is
   - [Resolve a single value on demand](#2-resolve-a-single-value-on-demand)
   - [Run as a CLI in a shell](#3-run-as-a-cli-in-a-shell)
   - [`--format=dotenv` — emit a byte-exact `.env`](#--formatdotenv--emit-a-byte-exact-env)
+  - [`--format=docker` — emit a docker `--env-file`](#--formatdocker--emit-a-docker---env-file)
 - [Errors](#errors)
 - [Architecture](#architecture)
 - [How it works](#how-it-works)
@@ -44,6 +45,7 @@ needs them.
 | A single value to resolve (literal or ARN) | `AwsFactory.make().getConfigService()` → `getOrThrow(key)` | Returns one resolved value on demand |
 | A shell entry point with Node available | `eval "$(npx @heronlabs/env-ssm)"` | Exports every parameter into the current shell |
 | A `.env` file to source or hand to a runtime | `npx @heronlabs/env-ssm --format=dotenv` | Prints byte-exact `NAME='value'` lines to source or write to `.env` |
+| An env file for `docker run --env-file` | `npx @heronlabs/env-ssm --format=docker` | Prints raw, unquoted `NAME=value` lines docker takes verbatim |
 
 These are **independent entry points — pick the one that matches where your
 variables need to land, not a sequence.** Each does its own SSM fetch; the CLI
@@ -257,6 +259,29 @@ Both formats sanitize names to valid shell identifiers and reject a name
 collision identically (see [Errors](#errors)). `--format=dotenv` still requires
 bash to `source` (the `'\''` idiom is POSIX single-quote escaping).
 
+#### `--format=docker` — emit a docker `--env-file`
+
+Docker's env-file parser (`docker run --env-file`, `docker create --env-file`)
+does **not** strip quotes — everything after the first `=` is taken verbatim —
+so handing it the `dotenv` output would put literal single quotes into the
+container. Pass `--format=docker` to print raw, unquoted `NAME=value` lines
+instead: no quoting, no escaping, the text after `=` *is* the value.
+
+```bash
+npx @heronlabs/env-ssm --format=docker > .env.docker
+
+docker run --env-file .env.docker my-image
+```
+
+- Same name sanitization and `Name Collision` rejection as the other formats
+  (see [Errors](#errors)).
+- A value containing a **newline is unrepresentable** in this format — docker
+  env files have no escaping mechanism, so a line break would corrupt the
+  file. The CLI throws `Value Multiline | <name>` instead of emitting corrupt
+  output. Multiline secrets need one of the other delivery paths.
+- Don't `source` or `eval` this output — spaces, quotes, `$` and `#` pass
+  through unescaped. It's for docker's parser, not a shell.
+
 An unrecognised value throws `Unknown Format | <value>`.
 
 > **Trust the path.** Anyone who can write to your SSM path controls the env
@@ -272,15 +297,18 @@ Every failure throws a plain `Error` — there are no custom error classes:
 - `Value Undefined | <name>` — the path env var is unset (the `process.env` /
   CLI paths), or the key is unset / the resolved ARN points to a parameter with
   no value (`getOrThrow`).
-- `Name Collision | <a>, <b> -> <identifier>` — the CLI path (`bash` and
-  `dotenv` formats alike): two parameter names sanitize to the same shell
+- `Name Collision | <a>, <b> -> <identifier>` — the CLI path (`bash`, `dotenv`
+  and `docker` formats alike): two parameter names sanitize to the same shell
   identifier, so emitting both would silently drop one. Rename one of the
   parameters.
+- `Value Multiline | <name>` — the `docker` format only: the value contains a
+  newline, which the docker env-file format cannot represent. Use another
+  delivery path for that parameter.
 - `Unknown Format | <value>` — the CLI was passed a `--format=` value other
-  than `bash` or `dotenv`.
+  than `bash`, `dotenv` or `docker`.
 
 A path that returns zero parameters is **not** an error — the `process.env`
-path loads nothing and the `bash` / `dotenv` paths print nothing.
+path loads nothing and the `bash` / `dotenv` / `docker` paths print nothing.
 
 Internally nothing throws mid-pipeline: core and infrastructure services return
 a result object — `{ok: true, data}` or `{ok: false, error}`. Exceptions
@@ -294,7 +322,7 @@ enforced by dependency-cruiser (`pnpm dep:cruise`):
 
 ```
 src/
-├── cli.ts                                 # npx entry: --format=bash|dotenv → stdout for `eval`/`source`
+├── cli.ts                                 # npx entry: --format=bash|dotenv|docker → stdout for `eval`/`source`/`--env-file`
 ├── main.ts                                # public exports: factories, commands, services
 ├── application/
 │   └── cli/
@@ -302,7 +330,8 @@ src/
 │       └── commands/
 │           ├── process-env-command.ts     # executeOrThrow(): load path → process.env
 │           ├── bash-env-command.ts        # executeOrThrow(): path → `export NAME=$'value'` lines
-│           └── dot-env-command.ts         # executeOrThrow(): path → `NAME='value'` lines
+│           ├── dot-env-command.ts         # executeOrThrow(): path → `NAME='value'` lines
+│           └── docker-env-command.ts      # executeOrThrow(): path → raw `NAME=value` lines
 ├── core/
 │   ├── core-factory.ts                    # CoreFactory — builds services wired to infrastructure
 │   ├── interfaces/
@@ -310,9 +339,10 @@ src/
 │   └── services/
 │       ├── process-env-service.ts         # load(): fetched params raw → process.env
 │       └── eval/
-│           ├── line-env-service.ts        # abstract base: sanitize names, detect collisions, join lines
+│           ├── line-env-service.ts        # abstract base: validate values, sanitize names, detect collisions, join lines
 │           ├── bash-env-service.ts        # evalLine(): ANSI-C escaping, `export` prefix
-│           └── dot-env-service.ts         # evalLine(): single-quote escaping, byte-exact
+│           ├── dot-env-service.ts         # evalLine(): single-quote escaping, byte-exact
+│           └── docker-env-service.ts      # evalLine(): raw, unquoted; rejects newline values
 └── infrastructure/
     └── aws/
         ├── aws-factory.ts                 # AwsFactory — owns the SSM client
@@ -341,20 +371,22 @@ to a `ParameterService`; `CliFactory.make()` wires commands to core services.
 Consumers call `make()` on the factory of the layer they need — no DI
 container.
 
-**Commands** (`ProcessEnvCommand`, `BashEnvCommand`, `DotEnvCommand`) — thin
-boundary objects: run the service, return its data, or unwrap and throw its
-error.
+**Commands** (`ProcessEnvCommand`, `BashEnvCommand`, `DotEnvCommand`,
+`DockerEnvCommand`) — thin boundary objects: run the service, return its data,
+or unwrap and throw its error.
 
 **Fetch** — `ParameterService.fetchAllParameters(pathEnvVar)` reads
 `process.env[pathEnvVar]` as the SSM path, pages through
 `getParametersByPath` (`WithDecryption: true`), and returns `{ leaf: value }`
 keyed by the last path segment.
 
-**Sinks** — same parameters, three destinations. `ProcessEnvService.load()`
-writes raw into `process.env`. `BashEnvService` and `DotEnvService` extend the
-abstract `LineEnvService`, which sanitizes names, rejects collisions, and joins
-one line per parameter — each subclass only defines `evalLine()`: ANSI-C
-`export NAME=$'value'` versus byte-exact `NAME='value'`.
+**Sinks** — same parameters, four destinations. `ProcessEnvService.load()`
+writes raw into `process.env`. `BashEnvService`, `DotEnvService` and
+`DockerEnvService` extend the abstract `LineEnvService`, which validates
+values, sanitizes names, rejects collisions, and joins one line per parameter —
+each subclass defines `evalLine()`: ANSI-C `export NAME=$'value'`, byte-exact
+`NAME='value'`, or raw `NAME=value` (docker, which alone hooks the value
+validation to reject newlines).
 
 ## Develop
 
@@ -371,10 +403,14 @@ pnpm dep:cruise       # architecture rules
 ```
 
 Integration tests live in `playwright/`: `seed.ts` populates a LocalStack SSM,
-then Playwright boots four tiny HTTP servers — one per delivery path
-(`process.env`, `eval`'d bash exports, a generated `.env`, single-value
-`ConfigService`) — against the built `bin/` output and asserts each serves the
-seeded values.
+then Playwright boots five tiny HTTP servers — one per delivery path
+(`process.env`, `eval`'d bash exports, a generated `.env`, a generated docker
+env-file, single-value `ConfigService`) — against the built `bin/` output and
+asserts each serves the seeded values. The docker path uses docker's real
+env-file parser, not a simulation: the CLI writes the env file on the host,
+then the mock server runs in a minimal node container started with
+`docker run --env-file`, so the values are injected at run time and the server
+just reads `process.env`.
 
 The CI pipeline (`Continuous Integration`) mirrors these: an `install` (build)
 job first, then audit, lint, and unit tests run in parallel. Mutation tests and

@@ -1,3 +1,9 @@
+## v4.0.15 (2026-09-16)
+
+### Miscellaneous Chores
+
+* other(deps-dev): bump @playwright/test from 1.61.1 to 1.63.0 (#41) (86892d093fe0573a464e5d7ccc4da7c5ceee249b)
+
 ## v4.0.14 (2026-09-16)
 
 ### Miscellaneous Chores

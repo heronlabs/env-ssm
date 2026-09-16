@@ -1,6 +1,4 @@
-import console from 'node:console';
 import {createServer} from 'node:http';
-import process from 'node:process';
 
 async function main() {
   const server = createServer((req, res) => {

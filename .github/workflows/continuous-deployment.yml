@@ -35,9 +35,9 @@ jobs:
       - uses: heronlabs/action-tag-release-build@v7
         id: version
         with:
-          gh_token: ${{ github.token }}
+          ghToken: ${{ github.token }}
           semantic: ${{ inputs.semantic }}
-          bump_npm: true
+          bumpNpm: true
 
   publish-npm:
     name: 'Publish package to npm'

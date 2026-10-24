@@ -430,7 +430,7 @@ Publishing is automated by the **`Continuous Deployment`** workflow:
   `patch`) for anything bigger.
 
 The `setup-tags` job bumps the version, tags, and creates the GitHub release
-(via `action-tag-release-build`); `publish-npm` then checks out the new tag,
+(via `action-tag-release`); `publish-npm` then checks out the new tag,
 builds, and runs `npm publish --access public --provenance` (the job holds
 `id-token: write` for sigstore provenance).
 
